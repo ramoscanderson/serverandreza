@@ -1,7 +1,7 @@
 <?php
 
 $numRecv = count($this->clients) - 1;
-echo sprintf('Conexao %d de %d enviou a mensagem: "%s"' . "\n"
+echo sprintf('Conexao %d de %d enviou a mensagem: "' . $msg . '"' . "\n"
 	, $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
 
 $from->send("Recebido");

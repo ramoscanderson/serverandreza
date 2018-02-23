@@ -31,7 +31,16 @@ function waitForSocketConnection(socket, callback){
 
 function post(msg){ 
     //alert(""+msg+"");
-    document.getElementById('texto').innerHTML += msg;
+    document.getElementById('texto').innerHTML += msg + "<br>";
+    var obj = JSON.parse(msg);
+    
+    if(obj.request.method == "connection"){
+        alert("chegou");
+        socket.send(msg);
+    }else{
+        alert("n chegou");
+    }
+    
     
 }
 
