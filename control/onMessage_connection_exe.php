@@ -14,7 +14,30 @@ $protocol_message = array(
 	"version" => "1.0.5",
 	"method" => "message",
 	"data" => array(
-		"message" => "Recebido"
+			array(
+			
+				"Date" => "2018-01-01",
+				"time" => "10h00 às 11h00",
+				"available" => true,
+				"mySchedule" => false,
+				"strAvailable" => "Horário disponível"
+			),
+			array(
+			
+				"Date" => "2018-01-01",
+				"time" => "11h00 às 11h30",
+				"available" => false,
+				"mySchedule" => false,
+				"strAvailable" => "Horário indisponível"
+			),
+			array(
+			
+				"Date" => "2018-01-01",
+				"time" => "10h30 às 12h00",
+				"available" => false,
+				"mySchedule" => true,
+				"strAvailable" => "Meu horário"
+			)
 		)
 	)
 );
@@ -27,7 +50,7 @@ echo "\n";
 //$from->send("Recebido");
 
 
-//Enviar a mensagem para todos os outros usu�rios
+//Enviar a mensagem para todos os outros usuᲩos
 /*
 foreach ($this->clients as $client) {
 	if ($from !== $client) {
