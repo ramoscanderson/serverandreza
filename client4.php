@@ -57,6 +57,6 @@ function enviar(msg){
 </script>
 
 <html>
-<input type='text' id='mensagem'><button onclick="enviar(document.getElementById('mensagem').value)">Enviar</button>
+<input type='text' id='mensagem' value='{"token":"Anderson","request":{"id":"1234","status":"200","version":"1.0.0","method":"uploadCalendarByDay","data":{"date":"2017-12-04"}}}'><button onclick="enviar(document.getElementById('mensagem').value)">Enviar</button>
 <div id='texto'></div>
 </html>
