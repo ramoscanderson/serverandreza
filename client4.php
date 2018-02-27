@@ -35,10 +35,10 @@ function post(msg){
     var obj = JSON.parse(msg);
     
     if(obj.request.method == "connection"){
-        alert("chegou");
+        //alert("chegou");
         socket.send(msg);
     }else{
-        alert("n chegou");
+        //alert("n chegou");
     }
     
     

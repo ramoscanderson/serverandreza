@@ -1,0 +1,2 @@
+openssl
+php_pdo_mysql.dll

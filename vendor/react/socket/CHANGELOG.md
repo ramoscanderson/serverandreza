@@ -1,5 +1,82 @@
 # Changelog
 
+## 0.8.9 (2017-01-18)
+
+*   Feature: Support explicitly choosing TLS version to negotiate with remote side
+    by respecting `crypto_method` context parameter for all classes.
+    (#149 by @clue)
+
+    By default, all connector and server classes support TLSv1.0+ and exclude
+    support for legacy SSLv2/SSLv3. As of PHP 5.6+ you can also explicitly
+    choose the TLS version you want to negotiate with the remote side:
+
+    ```php
+    // new: now supports 'crypto_method` context parameter for all classes
+    $connector = new Connector($loop, array(
+        'tls' => array(
+            'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+        )
+    ));
+    ```
+
+*   Minor internal clean up to unify class imports
+    (#148 by @clue)
+
+## 0.8.8 (2018-01-06)
+
+*   Improve test suite by adding test group to skip integration tests relying on
+    internet connection and fix minor documentation typo.
+    (#146 by @clue and #145 by @cn007b)
+
+## 0.8.7 (2017-12-24)
+
+*   Fix: Fix closing socket resource before removing from loop
+    (#141 by @clue)
+
+    This fixes the root cause of an uncaught `Exception` that only manifested
+    itself after the recent Stream v0.7.4 component update and only if you're
+    using `ext-event` (`ExtEventLoop`).
+
+*   Improve test suite by testing against PHP 7.2
+    (#140 by @carusogabriel)
+
+## 0.8.6 (2017-11-18)
+
+*   Feature: Add Unix domain socket (UDS) support to `Server` with `unix://` URI scheme
+    and add advanced `UnixServer` class.
+    (#120 by @andig)
+
+    ```php
+    // new: Server now supports "unix://" scheme
+    $server = new Server('unix:///tmp/server.sock', $loop);
+
+    // new: advanced usage
+    $server = new UnixServer('/tmp/server.sock', $loop);
+    ```
+
+*   Restructure examples to ease getting started
+    (#136 by @clue)
+
+*   Improve test suite by adding forward compatibility with PHPUnit 6 and
+    ignore Mac OS X test failures for now until Travis tests work again
+    (#133 by @gabriel-caruso and #134 by @clue)
+
+## 0.8.5 (2017-10-23)
+
+*   Fix: Work around PHP bug with Unix domain socket (UDS) paths for Mac OS X
+    (#123 by @andig)
+
+*   Fix: Fix `SecureServer` to return `null` URI if server socket is already closed
+    (#129 by @clue)
+
+*   Improve test suite by adding forward compatibility with PHPUnit v5 and
+    forward compatibility with upcoming EventLoop releases in tests and
+    test Mac OS X on Travis
+    (#122 by @andig and #125, #127 and #130 by @clue)
+
+*   Readme improvements
+    (#118 by @jsor)
+
 ## 0.8.4 (2017-09-16)
 
 *   Feature: Add `FixedUriConnector` decorator to use fixed, preconfigured URI instead

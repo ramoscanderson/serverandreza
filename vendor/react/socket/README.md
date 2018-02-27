@@ -1,9 +1,9 @@
 # Socket
 
-[![Build Status](https://secure.travis-ci.org/reactphp/socket.png?branch=master)](http://travis-ci.org/reactphp/socket)
+[![Build Status](https://travis-ci.org/reactphp/socket.svg?branch=master)](https://travis-ci.org/reactphp/socket)
 
 Async, streaming plaintext TCP/IP and secure TLS socket server and client
-connections for [ReactPHP](https://reactphp.org/)
+connections for [ReactPHP](https://reactphp.org/).
 
 The socket library provides re-usable interfaces for a socket-layer
 server and client based on the [`EventLoop`](https://github.com/reactphp/event-loop)
@@ -34,6 +34,7 @@ handle multiple concurrent connections without blocking.
   * [Advanced server usage](#advanced-server-usage)
     * [TcpServer](#tcpserver)
     * [SecureServer](#secureserver)
+    * [UnixServer](#unixserver)
     * [LimitingServer](#limitingserver)
       * [getConnections()](#getconnections)
 * [Client usage](#client-usage)
@@ -255,7 +256,8 @@ If the address can not be determined or is unknown at this time (such as
 after the socket has been closed), it MAY return a `NULL` value instead.
 
 Otherwise, it will return the full address (URI) as a string value, such
-as `tcp://127.0.0.1:8080`, `tcp://[::1]:80` or `tls://127.0.0.1:443`.
+as `tcp://127.0.0.1:8080`, `tcp://[::1]:80`, `tls://127.0.0.1:443`
+`unix://example.sock` or `unix:///path/to/example.sock`.
 Note that individual URI components are application specific and depend
 on the underlying transport protocol.
 
@@ -342,6 +344,7 @@ Calling this method more than once on the same instance is a NO-OP.
 The `Server` class is the main class in this package that implements the
 [`ServerInterface`](#serverinterface) and allows you to accept incoming
 streaming connections, such as plaintext TCP/IP or secure TLS connection streams.
+Connections can also be accepted on Unix domain sockets.
 
 ```php
 $server = new Server(8080, $loop);
@@ -371,6 +374,13 @@ brackets:
 
 ```php
 $server = new Server('[::1]:8080', $loop);
+```
+
+To listen on a Unix domain socket (UDS) path, you MUST prefix the URI with the
+`unix://` scheme:
+
+```php
+$server = new Server('unix:///tmp/server.sock', $loop);
 ```
 
 If the given URI is invalid, does not contain a port, any other scheme or if it
@@ -446,6 +456,19 @@ $server = new Server('tls://127.0.0.1:8000', $loop, array(
     'tls' => array(
         'local_cert' => 'server.pem',
         'passphrase' => 'secret'
+    )
+));
+```
+
+By default, this server supports TLSv1.0+ and excludes support for legacy
+SSLv2/SSLv3. As of PHP 5.6+ you can also explicitly choose the TLS version you
+want to negotiate with the remote side:
+
+```php
+$server = new Server('tls://127.0.0.1:8000', $loop, array(
+    'tls' => array(
+        'local_cert' => 'server.pem',
+        'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_SERVER
     )
 ));
 ```
@@ -602,6 +625,18 @@ $server = new SecureServer($server, $loop, array(
 ));
 ```
 
+By default, this server supports TLSv1.0+ and excludes support for legacy
+SSLv2/SSLv3. As of PHP 5.6+ you can also explicitly choose the TLS version you
+want to negotiate with the remote side:
+
+```php
+$server = new TcpServer(8000, $loop);
+$server = new SecureServer($server, $loop, array(
+    'local_cert' => 'server.pem',
+    'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_SERVER
+));
+```
+
 > Note that available [TLS context options](http://php.net/manual/en/context.ssl.php),
 their defaults and effects of changing these may vary depending on your system
 and/or PHP version.
@@ -648,6 +683,43 @@ If you use a custom `ServerInterface` and its `connection` event does not
 meet this requirement, the `SecureServer` will emit an `error` event and
 then close the underlying connection.
 
+#### UnixServer
+
+The `UnixServer` class implements the [`ServerInterface`](#serverinterface) and
+is responsible for accepting connections on Unix domain sockets (UDS).
+
+```php
+$server = new UnixServer('/tmp/server.sock', $loop);
+```
+
+As above, the `$uri` parameter can consist of only a socket path or socket path
+prefixed by the `unix://` scheme.
+
+If the given URI appears to be valid, but listening on it fails (such as if the
+socket is already in use or the file not accessible etc.), it will throw a
+`RuntimeException`:
+
+```php
+$first = new UnixServer('/tmp/same.sock', $loop);
+
+// throws RuntimeException because socket is already in use
+$second = new UnixServer('/tmp/same.sock', $loop);
+```
+
+Whenever a client connects, it will emit a `connection` event with a connection
+instance implementing [`ConnectionInterface`](#connectioninterface):
+
+```php
+$server->on('connection', function (ConnectionInterface $connection) {
+    echo 'New connection' . PHP_EOL;
+
+    $connection->write('hello there!' . PHP_EOL);
+    …
+});
+```
+
+See also the [`ServerInterface`](#serverinterface) for more details.
+
 #### LimitingServer
 
 The `LimitingServer` decorator wraps a given `ServerInterface` and is responsible
@@ -689,7 +761,7 @@ $server->on('connection', function (ConnectionInterface $connection) {
 You MAY pass a `null` limit in order to put no limit on the number of
 open connections and keep accepting new connection until you run out of
 operating system resources (such as open file handles). This may be
-useful it you do not want to take care of applying a limit but still want
+useful if you do not want to take care of applying a limit but still want
 to use the `getConnections()` method.
 
 You can optionally configure the server to pause accepting new
@@ -953,6 +1025,18 @@ $connector->connect('tls://localhost:443')->then(function (ConnectionInterface $
 });
 ```
 
+By default, this connector supports TLSv1.0+ and excludes support for legacy
+SSLv2/SSLv3. As of PHP 5.6+ you can also explicitly choose the TLS version you
+want to negotiate with the remote side:
+
+```php
+$connector = new Connector($loop, array(
+    'tls' => array(
+        'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+    )
+));
+```
+
 > For more details about context options, please refer to the PHP documentation
   about [socket context options](http://php.net/manual/en/context.socket.php)
   and [SSL context options](http://php.net/manual/en/context.ssl.php).
@@ -1018,7 +1102,7 @@ $tcpConnector->connect('127.0.0.1:80')->then(function (ConnectionInterface $conn
 $loop->run();
 ```
 
-See also the [first example](examples).
+See also the [examples](examples).
 
 Pending connection attempts can be cancelled by cancelling its pending promise like so:
 
@@ -1086,7 +1170,7 @@ $dnsConnector->connect('www.google.com:80')->then(function (ConnectionInterface 
 $loop->run();
 ```
 
-See also the [first example](examples).
+See also the [examples](examples).
 
 Pending connection attempts can be cancelled by cancelling its pending promise like so:
 
@@ -1131,7 +1215,7 @@ $secureConnector->connect('www.google.com:443')->then(function (ConnectionInterf
 $loop->run();
 ```
 
-See also the [second example](examples).
+See also the [examples](examples).
 
 Pending connection attempts can be cancelled by cancelling its pending promise like so:
 
@@ -1142,7 +1226,7 @@ $promise->cancel();
 ```
 
 Calling `cancel()` on a pending promise will cancel the underlying TCP/IP
-connection and/or the SSL/TLS negonation and reject the resulting promise.
+connection and/or the SSL/TLS negotiation and reject the resulting promise.
 
 You can optionally pass additional
 [SSL context options](http://php.net/manual/en/context.ssl.php)
@@ -1152,6 +1236,16 @@ to the constructor like this:
 $secureConnector = new React\Socket\SecureConnector($dnsConnector, $loop, array(
     'verify_peer' => false,
     'verify_peer_name' => false
+));
+```
+
+By default, this connector supports TLSv1.0+ and excludes support for legacy
+SSLv2/SSLv3. As of PHP 5.6+ you can also explicitly choose the TLS version you
+want to negotiate with the remote side:
+
+```php
+$secureConnector = new React\Socket\SecureConnector($dnsConnector, $loop, array(
+    'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
 ));
 ```
 
@@ -1249,7 +1343,7 @@ The recommended way to install this library is [through Composer](https://getcom
 This will install the latest supported version:
 
 ```bash
-$ composer require react/socket:^0.8.4
+$ composer require react/socket:^0.8.9
 ```
 
 See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
@@ -1310,6 +1404,14 @@ To run the test suite, go to the project root and run:
 
 ```bash
 $ php vendor/bin/phpunit
+```
+
+The test suite also contains a number of functional integration tests that rely
+on a stable internet connection.
+If you do not want to run these, they can simply be skipped like this:
+
+```bash
+$ php vendor/bin/phpunit --exclude-group internet
 ```
 
 ## License
