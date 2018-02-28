@@ -57,6 +57,8 @@ function enviar(msg){
 </script>
 
 <html>
-<input type='text' id='mensagem' value='{"token":"Anderson","request":{"id":"1234","status":"200","version":"1.0.0","method":"uploadCalendarByDay","data":{"date":"2017-12-04"}}}'><button onclick="enviar(document.getElementById('mensagem').value)">Enviar</button>
+<input type='text' id='mensagem' value='{"token":"Anderson","request":{"id":"1234","status":"200","version":"1.0.0","method":"updateScheduleByDay","data":{"date":"2018-02-27"}}}'><button onclick="enviar(document.getElementById('mensagem').value)">updateScheduleByDay</button><br><br>
+<input type='text' id='mensagem2' value='{"token":"Anderson","request":{"id":"1235","status":"200","version":"1.0.0","method":"setSchedule","data":{"date":"2018-02-27", "hour":"14h00 as 15h00"}}}'><button onclick="enviar(document.getElementById('mensagem2').value)">setSchedule</button><br><br>
+<input type='text' id='mensagem3' value='{"token":"Anderson","request":{"id":"1235","status":"200","version":"1.0.0","method":"cancelSchedule","data":{"id":"2", "date":"2018-02-27"}}}'><button onclick="enviar(document.getElementById('mensagem3').value)">cancelSchedule</button><br><br>
 <div id='texto'></div>
 </html>
