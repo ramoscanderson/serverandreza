@@ -10,9 +10,9 @@ switch($messageObj->request->method){
 	
 	
 	case "updateScheduleByDay":
-		echo "Solicitacao de select de agenda recebida\n";
+		echo "Solicitacao de select de agenda recebida - " . $messageObj->request->data->date . "\n";
 		$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
-		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","uploadScheduleByDay",$agenda));
+		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
 		echo "Resposta enviada\n";
 		break;
 		
@@ -27,7 +27,7 @@ switch($messageObj->request->method){
 				echo "Atualizando demais dispositivos\n";
 				$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
 				foreach ($this->clients as $client) {
-					$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","uploadScheduleByDay",$agenda));
+					$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
 				}
 				echo "Dispositivos atualizados\n";
 				break;
