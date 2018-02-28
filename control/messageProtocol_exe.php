@@ -25,7 +25,7 @@ function message_getProtocol($message){
 				"id" => "601",
 				"status" => "601",
 				"version" => "1.0.5", //corrigir para pegar a versão no global
-				"method" => "error_protocol",
+				"method" => "Error - Incorrect protocol",
 				"data" => array()
 			)
 		);
