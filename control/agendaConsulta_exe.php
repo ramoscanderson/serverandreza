@@ -1,25 +1,25 @@
-<?php
+Ôªø<?php
 
-function cancelarAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function cancelarAgenda($data, $usuario){ //FAZER C√ìDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 
 	$id = $data->id;
 	
 	echo "Cancelando registro: $id\n";
 
-	$sql = "UPDATE agenda_consulta SET cancelado = 1 WHERE id = ?"; //FAZER CORRE«√O PARA MAIS CLIENTES
+	$sql = "UPDATE agenda_consulta SET cancelado = 1 WHERE id = ?"; //FAZER CORRE√á√ÉO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $id);
 	$consulta->execute();
 
 	if($consulta){
-		return "success"; //NA VERIFICA«√O SE OS DADOS VIERAM CORRETOS, CASO N√O TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO N√O … TRUE E FALSE
+		return "success"; //NA VERIFICA√á√ÉO SE OS DADOS VIERAM CORRETOS, CASO N√ÉO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO N√ÉO √â TRUE E FALSE
 	}else{
 		return "failed";
 	}
 }
 
-function inserirAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function inserirAgenda($data, $usuario){ //FAZER C√ìDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
 	$date = $data->date;
@@ -31,7 +31,7 @@ function inserirAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DADO
 	
 	echo "Inserindo registro: $date - $hora_inicio - $hora_fim - $usuario\n";
 	
-	$sql = "INSERT INTO agenda_consulta (data, hora_inicio, hora_fim, usuario) VALUES (?, ?, ?, ?)"; //FAZER CORRE«√O PARA MAIS CLIENTES
+	$sql = "INSERT INTO agenda_consulta (data, hora_inicio, hora_fim, usuario) VALUES (?, ?, ?, ?)"; //FAZER CORRE√á√ÉO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
 	$consulta->bindValue(1, $date);
 	$consulta->bindValue(2, $hora_inicio);
@@ -40,13 +40,13 @@ function inserirAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DADO
 	$consulta->execute();
 	
 	if($consulta){
-		return "success"; //NA VERIFICA«√O SE OS DADOS VIERAM CORRETOS, CASO N√O TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO N√O … TRUE E FALSE
+		return "success"; //NA VERIFICA√á√ÉO SE OS DADOS VIERAM CORRETOS, CASO N√ÉO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO N√ÉO √â TRUE E FALSE
 	}else{
 		return "failed";
 	}
 }
 
-function carregarAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function carregarAgenda($data, $usuario){ //FAZER C√ìDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
 	$date = $data->date;
@@ -58,7 +58,7 @@ function carregarAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DAD
 	$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
 	$intervalo_padrao = "01:00:00";
 	
-	$sql = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = 0 ORDER BY hora_inicio"; //FAZER CORRE«√O PARA MAIS CLIENTES
+	$sql = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = 0 ORDER BY hora_inicio"; //FAZER CORRE√á√ÉO PARA MAIS CLIENTES
 	
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $date);
@@ -82,10 +82,10 @@ function carregarAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DAD
 				$agenda[] = array(
 					"id" => $agendamentos[$index]["id"],
 					"Date" => $agendamentos[$index]["data"],
-					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " as " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
+					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " √†s " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
 					"available" => false,
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
-					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horario" : "Indisponivel")
+					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu hor√°rio" : "Indispon√≠vel")
 				);
 			}else{
 				$partes = explode(":", $intervalo_padrao);
@@ -94,10 +94,10 @@ function carregarAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DAD
 				$agenda[] = array(
 					"id" => null,
 					"Date" => $date,
-					"time" => str_replace(":", "h", substr($hora_atual, 0, 5)) . " as " . str_replace(":", "h", substr($hora_final, 0, 5)),
+					"time" => str_replace(":", "h", substr($hora_atual, 0, 5)) . " √†s " . str_replace(":", "h", substr($hora_final, 0, 5)),
 					"available" => true,
 					"mySchedule" => false,
-					"strAvailable" => "Horario disponivel"
+					"strAvailable" => "Hor√°rio dispon√≠vel"
 				);
 			}
 			$hora_atual = strtotime($hora_atual) + 60;
@@ -110,10 +110,10 @@ function carregarAgenda($data, $usuario){ //FAZER C”DIGO QUE VERIFIQUE SE OS DAD
 				$agenda[] = array(
 					"id" => $agendamentos[$index]["id"],
 					"Date" => $agendamentos[$index]["data"],
-					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " as " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
+					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " √†s " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
 					"available" => false,
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
-					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horario" : "Indisponivel")
+					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu hor√°rio" : "Indispon√≠vel")
 				);
 			}
 			$hora_atual = strtotime($hora_atual) + 60;
