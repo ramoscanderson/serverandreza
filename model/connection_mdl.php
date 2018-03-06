@@ -3,6 +3,7 @@ use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 require ("control/messageProtocol_exe.php");
 require ("control/agendaConsulta_exe.php");
+require ("control/token_exe.php");
 
 class Connection implements MessageComponentInterface {
 	protected $clients;

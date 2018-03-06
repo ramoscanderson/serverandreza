@@ -4,6 +4,9 @@ $numRecv = count($this->clients) - 1;
 echo sprintf("\n" . 'Conexao %d enviou uma requisicao' /*. $msg . '"'*/ . "\n", $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
 
 $messageObj = message_getProtocol($msg);
+
+//echo $messageObj->token . "\n";
+
 echo $messageObj->request->method . "\n";
 
 switch($messageObj->request->method){
@@ -18,48 +21,67 @@ switch($messageObj->request->method){
 		
 		
 	case "setSchedule":
-		echo "Solicitacao de insert de agenda recebida\n";
-		$agenda = inserirAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
-		switch($agenda){
-			case "success":
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setSchedule",array("isSchedule" => true)));
-				echo "Resposta enviada\n";
-				echo "Atualizando demais dispositivos\n";
-				$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
-				foreach ($this->clients as $client) {
-					$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
-				}
-				echo "Dispositivos atualizados\n";
-				break;
-			case "failed":
-				echo "Erro ao gravar registro na agenda\n";
-				$from->send(message_setProtocol($messageObj->request->id,"603","Error - Could not insert record","1.0.5","setSchedule",array("isSchedule" => false)));
-				echo "Resposta enviada\n";
-				break;
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setSchedule",array("isSchedule" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Solicitacao de insert de agenda recebida\n";
+			$agenda = inserirAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+			switch($agenda){
+				case "success":
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setSchedule",array("isSchedule" => true)));
+					echo "Resposta enviada\n";
+					echo "Atualizando demais dispositivos\n";
+					$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+					foreach ($this->clients as $client) {
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
+					}
+					echo "Dispositivos atualizados\n";
+					break;
+				case "failed":
+					echo "Erro ao gravar registro na agenda\n";
+					$from->send(message_setProtocol($messageObj->request->id,"603","Error - Could not insert record","1.0.5","setSchedule",array("isSchedule" => false)));
+					echo "Resposta enviada\n";
+					break;
+			}
 		}
 		break;
 	
 	
 	case "cancelSchedule":
-		echo "Solicitacao de cancel de agenda recebida\n";
-		$agenda = cancelarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
-		switch($agenda){
-			case "success":
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelSchedule",array("isScheduleCanceled" => true)));
-				echo "Resposta enviada\n";
-				echo "Atualizando demais dispositivos\n";
-				$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
-				foreach ($this->clients as $client) {
-					$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
-				}
-				echo "Dispositivos atualizados\n";
-				break;
-			case "failed":
-				echo "Erro ao gravar registro na agenda\n";
-				$from->send(message_setProtocol($messageObj->request->id,"604","Error - Could not canceled record","1.0.5","cancelSchedule",array("isScheduleCanceled" => false)));
-				echo "Resposta enviada\n";
-				break;
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelSchedule",array("isScheduleCanceled" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Solicitacao de cancel de agenda recebida\n";
+			$agenda = cancelarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+			switch($agenda){
+				case "success":
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelSchedule",array("isScheduleCanceled" => true)));
+					echo "Resposta enviada\n";
+					echo "Atualizando demais dispositivos\n";
+					$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+					foreach ($this->clients as $client) {
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
+					}
+					echo "Dispositivos atualizados\n";
+					break;
+				case "failed":
+					echo "Erro ao gravar registro na agenda\n";
+					$from->send(message_setProtocol($messageObj->request->id,"604","Error - Could not canceled record","1.0.5","cancelSchedule",array("isScheduleCanceled" => false)));
+					echo "Resposta enviada\n";
+					break;
+			}
 		}
+		break;
+		
+		
+	case "jwt":
+		echo "Solicitacao de TESTE JWT recebida\n";
+		
+		
 		break;
 		
 		

@@ -133,6 +133,54 @@
         ]
     },
     {
+        "name": "firebase/php-jwt",
+        "version": "v5.0.0",
+        "version_normalized": "5.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/firebase/php-jwt.git",
+            "reference": "9984a4d3a32ae7673d6971ea00bae9d0a1abba0e"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/firebase/php-jwt/zipball/9984a4d3a32ae7673d6971ea00bae9d0a1abba0e",
+            "reference": "9984a4d3a32ae7673d6971ea00bae9d0a1abba0e",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": " 4.8.35"
+        },
+        "time": "2017-06-27T22:17:23+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Firebase\\JWT\\": "src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "authors": [
+            {
+                "name": "Neuman Vong",
+                "email": "neuman+pear@twilio.com",
+                "role": "Developer"
+            },
+            {
+                "name": "Anant Narayanan",
+                "email": "anant@php.net",
+                "role": "Developer"
+            }
+        ],
+        "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP. Should conform to the current spec.",
+        "homepage": "https://github.com/firebase/php-jwt"
+    },
+    {
         "name": "guzzlehttp/psr7",
         "version": "1.4.2",
         "version_normalized": "1.4.2.0",
@@ -547,17 +595,17 @@
     },
     {
         "name": "react/dns",
-        "version": "v0.4.12",
-        "version_normalized": "0.4.12.0",
+        "version": "v0.4.13",
+        "version_normalized": "0.4.13.0",
         "source": {
             "type": "git",
             "url": "https://github.com/reactphp/dns.git",
-            "reference": "c74a0af0c7254e73600fd8c5c95f6bf23c5998f4"
+            "reference": "7d1e08c300fd7de600810883386ee5e2a64898f4"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/reactphp/dns/zipball/c74a0af0c7254e73600fd8c5c95f6bf23c5998f4",
-            "reference": "c74a0af0c7254e73600fd8c5c95f6bf23c5998f4",
+            "url": "https://api.github.com/repos/reactphp/dns/zipball/7d1e08c300fd7de600810883386ee5e2a64898f4",
+            "reference": "7d1e08c300fd7de600810883386ee5e2a64898f4",
             "shasum": ""
         },
         "require": {
@@ -566,14 +614,13 @@
             "react/event-loop": "^1.0 || ^0.5 || ^0.4 || ^0.3.5",
             "react/promise": "^2.1 || ^1.2.1",
             "react/promise-timer": "^1.2",
-            "react/socket": "^1.0 || ^0.8 || ^0.7 || ^0.6 || ^0.5 || ^0.4.4",
             "react/stream": "^1.0 || ^0.7 || ^0.6 || ^0.5 || ^0.4.5"
         },
         "require-dev": {
             "clue/block-react": "^1.2",
             "phpunit/phpunit": "^6.4 || ^5.7 || ^4.8.35"
         },
-        "time": "2018-01-14T10:04:36+00:00",
+        "time": "2018-02-27T12:51:22+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -793,23 +840,23 @@
     },
     {
         "name": "react/socket",
-        "version": "v0.8.9",
-        "version_normalized": "0.8.9.0",
+        "version": "v0.8.10",
+        "version_normalized": "0.8.10.0",
         "source": {
             "type": "git",
             "url": "https://github.com/reactphp/socket.git",
-            "reference": "9db38c58cbb1343bbe6523d1b930a40d0e110839"
+            "reference": "d3957313c92b539537fccc80170c05a27ec25796"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/reactphp/socket/zipball/9db38c58cbb1343bbe6523d1b930a40d0e110839",
-            "reference": "9db38c58cbb1343bbe6523d1b930a40d0e110839",
+            "url": "https://api.github.com/repos/reactphp/socket/zipball/d3957313c92b539537fccc80170c05a27ec25796",
+            "reference": "d3957313c92b539537fccc80170c05a27ec25796",
             "shasum": ""
         },
         "require": {
             "evenement/evenement": "^3.0 || ^2.0 || ^1.0",
             "php": ">=5.3.0",
-            "react/dns": "^0.4.11",
+            "react/dns": "^0.4.13",
             "react/event-loop": "^1.0 || ^0.5 || ^0.4 || ^0.3.5",
             "react/promise": "^2.1 || ^1.2",
             "react/promise-timer": "~1.0",
@@ -819,7 +866,7 @@
             "clue/block-react": "^1.2",
             "phpunit/phpunit": "^6.4 || ^5.7 || ^4.8.35"
         },
-        "time": "2018-01-18T11:29:21+00:00",
+        "time": "2018-02-28T09:32:38+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -1023,17 +1070,17 @@
     },
     {
         "name": "symfony/http-foundation",
-        "version": "v3.4.4",
-        "version_normalized": "3.4.4.0",
+        "version": "v3.4.5",
+        "version_normalized": "3.4.5.0",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/http-foundation.git",
-            "reference": "8c39071ac9cc7e6d8dab1d556c990dc0d2cc3d30"
+            "reference": "6f5935723c11b4125fc9927db6ad2feaa196e175"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/http-foundation/zipball/8c39071ac9cc7e6d8dab1d556c990dc0d2cc3d30",
-            "reference": "8c39071ac9cc7e6d8dab1d556c990dc0d2cc3d30",
+            "url": "https://api.github.com/repos/symfony/http-foundation/zipball/6f5935723c11b4125fc9927db6ad2feaa196e175",
+            "reference": "6f5935723c11b4125fc9927db6ad2feaa196e175",
             "shasum": ""
         },
         "require": {
@@ -1044,7 +1091,7 @@
         "require-dev": {
             "symfony/expression-language": "~2.8|~3.0|~4.0"
         },
-        "time": "2018-01-29T09:03:43+00:00",
+        "time": "2018-02-22T10:48:49+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1201,17 +1248,17 @@
     },
     {
         "name": "symfony/routing",
-        "version": "v3.4.4",
-        "version_normalized": "3.4.4.0",
+        "version": "v3.4.5",
+        "version_normalized": "3.4.5.0",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/routing.git",
-            "reference": "235d01730d553a97732990588407eaf6779bb4b2"
+            "reference": "8773a9d52715f1a579576ce0e60213de34f5ef3e"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/routing/zipball/235d01730d553a97732990588407eaf6779bb4b2",
-            "reference": "235d01730d553a97732990588407eaf6779bb4b2",
+            "url": "https://api.github.com/repos/symfony/routing/zipball/8773a9d52715f1a579576ce0e60213de34f5ef3e",
+            "reference": "8773a9d52715f1a579576ce0e60213de34f5ef3e",
             "shasum": ""
         },
         "require": {
@@ -1240,7 +1287,7 @@
             "symfony/http-foundation": "For using a Symfony Request object",
             "symfony/yaml": "For using the YAML loader"
         },
-        "time": "2018-01-16T18:03:57+00:00",
+        "time": "2018-02-28T21:49:22+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {

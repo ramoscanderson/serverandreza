@@ -28,8 +28,12 @@ names, baby!
 
 ```php
 $loop = React\EventLoop\Factory::create();
+
+$config = React\Dns\Config\Config::loadSystemConfigBlocking();
+$server = $config->nameservers ? reset($config->nameservers) : '8.8.8.8';
+
 $factory = new React\Dns\Resolver\Factory();
-$dns = $factory->create('8.8.8.8', $loop);
+$dns = $factory->create($server, $loop);
 
 $dns->resolve('igor.io')->then(function ($ip) {
     echo "Host: $ip\n";
@@ -39,6 +43,14 @@ $loop->run();
 ```
 
 See also the [first example](examples).
+
+The `Config` class can be used to load the system default config. This is an
+operation that may access the filesystem and block. Ideally, this method should
+thus be executed only once before the loop starts and not repeatedly while it is
+running.
+Note that this class may return an *empty* configuration if the system config
+can not be loaded. As such, you'll likely want to apply a default nameserver
+as above if none can be found.
 
 > Note that the factory loads the hosts file from the filesystem once when
   creating the resolver instance.
@@ -61,8 +73,12 @@ You can cache results by configuring the resolver to use a `CachedExecutor`:
 
 ```php
 $loop = React\EventLoop\Factory::create();
+
+$config = React\Dns\Config\Config::loadSystemConfigBlocking();
+$server = $config->nameservers ? reset($config->nameservers) : '8.8.8.8';
+
 $factory = new React\Dns\Resolver\Factory();
-$dns = $factory->createCached('8.8.8.8', $loop);
+$dns = $factory->createCached($server, $loop);
 
 $dns->resolve('igor.io')->then(function ($ip) {
     echo "Host: $ip\n";
@@ -150,7 +166,7 @@ The recommended way to install this library is [through Composer](https://getcom
 This will install the latest supported version:
 
 ```bash
-$ composer require react/dns:^0.4.12
+$ composer require react/dns:^0.4.13
 ```
 
 See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
@@ -163,12 +179,10 @@ It's *highly recommended to use PHP 7+* for this project.
 ## Tests
 
 To run the test suite, you first need to clone this repo and then install all
-dependencies [through Composer](https://getcomposer.org).
-Because the test suite contains some circular dependencies, you may have to
-manually specify the root package version like this:
+dependencies [through Composer](https://getcomposer.org):
 
 ```bash
-$ COMPOSER_ROOT_VERSION=`git describe --abbrev=0` composer install
+$ composer install
 ```
 
 To run the test suite, go to the project root and run:
