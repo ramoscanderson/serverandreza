@@ -24,8 +24,7 @@ function inserirAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DAD
 	
 	$date = $data->date;
 	$hour = $data->hour;
-	
-	$partes = explode(" as ", $hour);
+	$partes = explode(" às ", $hour);
 	$hora_inicio = str_replace("h", ":" ,$partes[0]) . ":00";
 	$hora_fim = str_replace("h", ":" ,$partes[1]) . ":00";
 	
