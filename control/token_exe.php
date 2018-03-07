@@ -30,7 +30,7 @@ ehde/zUxo6UvS7UrBQIDAQAB
 EOD;
 
 	$token = array(
-		"user" => $user,
+		"id" => $user,
 		"date_create" => date('Y-m-d'),
 		"admin" => false,
 		"developer" => false
@@ -74,9 +74,9 @@ EOD;
 	$decoded = JWT::decode($jwt, $publicKey, array('RS256'));
    
 	$decoded_array = (array) $decoded;
-	echo "Decode:\n" . print_r($decoded_array, true) . "\n";
+	//echo "Decode:\n" . print_r($decoded_array, true) . "\n";
    
-	return $$decoded_array;
+	return json_decode(json_encode($decoded_array));
 }
 
 
@@ -112,7 +112,7 @@ EOD;
 	echo "Token valido\n";
 	$decoded_array = (array) $decoded;
 	
-	if($decoded_array['user'] == "1"){
+	if($decoded_array['id'] == "1"){
 		return true;
 	}else{
 		return false;

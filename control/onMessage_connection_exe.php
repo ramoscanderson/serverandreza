@@ -1,7 +1,7 @@
 <?php
 
 $numRecv = count($this->clients) - 1;
-echo sprintf("\n" . 'Conexao %d enviou uma requisicao' /*. $msg . '"'*/ . "\n", $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
+echo sprintf("\n" . 'Conexao %d enviou uma requisicao - ' . date('H:i:s d-m-Y') . "\n", $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
 
 $messageObj = message_getProtocol($msg);
 
@@ -14,7 +14,7 @@ switch($messageObj->request->method){
 	
 	case "updateScheduleByDay":
 		echo "Solicitacao de select de agenda recebida - " . $messageObj->request->data->date . "\n";
-		$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+		$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
 		echo "Resposta enviada\n";
 		break;
@@ -27,13 +27,13 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "Solicitacao de insert de agenda recebida\n";
-			$agenda = inserirAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+			$agenda = inserirAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
 			switch($agenda){
 				case "success":
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setSchedule",array("isSchedule" => true)));
 					echo "Resposta enviada\n";
 					echo "Atualizando demais dispositivos\n";
-					$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+					$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
 					foreach ($this->clients as $client) {
 						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
 					}
@@ -56,13 +56,13 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "Solicitacao de cancel de agenda recebida\n";
-			$agenda = cancelarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+			$agenda = cancelarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
 			switch($agenda){
 				case "success":
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelSchedule",array("isScheduleCanceled" => true)));
 					echo "Resposta enviada\n";
 					echo "Atualizando demais dispositivos\n";
-					$agenda = carregarAgenda($messageObj->request->data, "1");//PEGAR INFORMAÇÕES DO REQUEST RECEBIDO -- VER COMO PEGAR INFORMAÇÕES DO USUÁRIO
+					$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
 					foreach ($this->clients as $client) {
 						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
 					}
@@ -76,11 +76,47 @@ switch($messageObj->request->method){
 			}
 		}
 		break;
+
+
+	case "setUser":
+		echo "Solicitacao de insert de usuario recebida\n";
+		$user = cadastraUsuario($messageObj->request->data);
+		switch($user){
+			case "success":
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setUser",array("isUser" => true)));
+				echo "Resposta enviada\n";				
+				break;
+			case "failed":
+				echo "Erro ao gravar registro usuario\n";
+				$from->send(message_setProtocol($messageObj->request->id,"607","Error - Could not insert record","1.0.5","setUser",array("isUser" => false)));
+				echo "Resposta enviada\n";
+				break;
+		}
+		break;
+
+
+	case "signin":
+		echo "Solicitacao de login recebida\n";
+		$user;
+		if(isVisitante($messageObj->token)){
+			$user = consultaUsuario($messageObj->request->data);
+		}else{
+			$user = consultaUsuario(getJWT($messageObj->token));
+		}
+		if(is_array($user)){
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","signin",array("isSignIn" => true, "user" => (array)$user, "token" => setJWT($user['id']))));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Nenhum usuario encontrado com os dados enviados\n";
+			$from->send(message_setProtocol($messageObj->request->id,"606","Error - Login or password invalid","1.0.5","signin",array("isSignIn" => false)));
+			echo "Resposta enviada\n";
+		}
+		break;
 		
 		
 	case "jwt":
-		echo "Solicitacao de TESTE JWT recebida\n";
-		
+		echo "Solicitacao de TESTE recebida\n";
+		getJWT($messageObj->token);
 		
 		break;
 		
