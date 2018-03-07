@@ -1,12 +1,18 @@
 <?php
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require("model/class.phpmailer.php");
+require("model/class.smtp.php");
+
 require ("control/messageProtocol_exe.php");
 require ("control/agendaConsulta_exe.php");
 require ("control/usuario_exe.php");
 require ("control/token_exe.php");
-//require ("lib/constants.php");
-//require ("lib/envia_email.php");
+require ("control/email_exe.php");
+
 date_default_timezone_set('America/Sao_Paulo');
 
 class Connection implements MessageComponentInterface {
