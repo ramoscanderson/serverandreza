@@ -14,7 +14,7 @@ switch($messageObj->request->method){
 	
 	case "updateScheduleByDay":
 		echo "Solicitacao de select de agenda recebida - " . $messageObj->request->data->date . "\n";
-		$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
+		$agenda = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda[0]));
 		echo "Resposta enviada\n";
 		break;
@@ -27,13 +27,13 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "Solicitacao de insert de agenda recebida\n";
-			$agenda = inserirAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
+			$agenda = inserirAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			switch($agenda){
 				case "success":
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setSchedule",array("isSchedule" => true)));
 					echo "Resposta enviada\n";
 					echo "Atualizando demais dispositivos\n";
-					$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
+					$agenda = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					foreach ($this->clients as $client) {
 						//echo "ID CONEXAO: $from->resourceId\n";
 						global $conexoes;
@@ -77,13 +77,13 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "Solicitacao de cancel de agenda recebida\n";
-			$agenda = cancelarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
+			$agenda = cancelarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			switch($agenda){
 				case "success":
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelSchedule",array("isScheduleCanceled" => true)));
 					echo "Resposta enviada\n";
 					echo "Atualizando demais dispositivos\n";
-					$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
+					$agenda = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					foreach ($this->clients as $client) {
 						//echo "ID CONEXAO: $from->resourceId\n";
 						global $conexoes;
@@ -121,7 +121,7 @@ switch($messageObj->request->method){
 
 	case "setUser":
 		echo "Solicitacao de insert de usuario recebida\n";
-		$user = cadastraUsuario($messageObj->request->data);
+		$user = cadastraUsuario($messageObj->request->data, $messageObj->request->client);
 		switch($user){
 			case "success":
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setUser",array("isUser" => true)));
@@ -136,22 +136,22 @@ switch($messageObj->request->method){
 		break;
 
 
-	case "signin":
+	case "signIn":
 		echo "Solicitacao de login recebida\n";
 		$user;
 		if(isVisitante($messageObj->token)){
-			$user = consultaUsuario($messageObj->request->data);
+			$user = consultaUsuario($messageObj->request->data, $messageObj->request->client);
 		}else{
-			$user = consultaUsuario(getJWT($messageObj->token));
+			$user = consultaUsuario(getJWT($messageObj->token), $messageObj->request->client);
 		}
 		if(is_array($user)){
-			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","signin",array("isSignIn" => true, "user" => (array)$user, "token" => setJWT($user['id']))));
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","signIn",array("isSignIn" => true, "user" => (array)$user, "token" => setJWT($user['id']))));
 			global $conexoes;
 			$conexoes["{$from->resourceId}"] = array("userId"=>$user['id']);
 			echo "Resposta enviada\n";
 		}else{
 			echo "Nenhum usuario encontrado com os dados enviados\n";
-			$from->send(message_setProtocol($messageObj->request->id,"606","Error - Login or password invalid","1.0.5","signin",array("isSignIn" => false)));
+			$from->send(message_setProtocol($messageObj->request->id,"606","Error - Login or password invalid","1.0.5","signIn",array("isSignIn" => false)));
 			echo "Resposta enviada\n";
 		}
 		break;

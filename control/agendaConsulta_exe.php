@@ -1,6 +1,6 @@
 ﻿<?php
 
-function cancelarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function cancelarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 
 	$id = $data->id;
@@ -19,7 +19,7 @@ function cancelarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	}
 }
 
-function inserirAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function inserirAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
 	$date = $data->date;
@@ -30,12 +30,13 @@ function inserirAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DAD
 	
 	echo "Inserindo registro: $date - $hora_inicio - $hora_fim - $usuario\n";
 	
-	$sql = "INSERT INTO agenda_consulta (data, hora_inicio, hora_fim, usuario) VALUES (?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "INSERT INTO agenda_consulta (data, hora_inicio, hora_fim, usuario, cliente) VALUES (?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
 	$consulta->bindValue(1, $date);
 	$consulta->bindValue(2, $hora_inicio);
 	$consulta->bindValue(3, $hora_fim);
 	$consulta->bindValue(4, $usuario);
+	$consulta->bindValue(5, $client);
 	$consulta->execute();
 	
 	if($consulta){
@@ -45,7 +46,7 @@ function inserirAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DAD
 	}
 }
 
-function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
 	$date = $data->date;
@@ -58,10 +59,11 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
 	$intervalo_padrao = "01:00:00";
 	
-	$sql = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = 0 ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = 0 and cliente = ? ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $date);
+	$consulta->bindParam(2, $client);
 	$consulta->execute();
 	
 	if ($consulta->rowCount() > 0) {
@@ -81,7 +83,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 				$index = array_search($hora_atual, array_column($agendamentos, "hora_inicio"));
 				$agenda[] = array(
 					"id" => $agendamentos[$index]["id"],
-					"Date" => $agendamentos[$index]["data"],
+					"date" => $agendamentos[$index]["data"],
 					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " às " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
 					"available" => false,
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
@@ -94,7 +96,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 				$hora_final = strftime('%H:%M:%S', $hora_final);
 				$agenda[] = array(
 					"id" => null,
-					"Date" => $date,
+					"date" => $date,
 					"time" => str_replace(":", "h", substr($hora_atual, 0, 5)) . " às " . str_replace(":", "h", substr($hora_final, 0, 5)),
 					"available" => true,
 					"mySchedule" => false,
@@ -111,7 +113,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 				$index = array_search($hora_atual, array_column($agendamentos, "hora_inicio"));
 				$agenda[] = array(
 					"id" => $agendamentos[$index]["id"],
-					"Date" => $agendamentos[$index]["data"],
+					"date" => $agendamentos[$index]["data"],
 					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " às " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
 					"available" => false,
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
