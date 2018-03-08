@@ -51,6 +51,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	$date = $data->date;
 	
 	$agenda = array();
+	$usuarios = array();
 	$agendamentos = array();
 	
 	$inicio_servico = "07:00:00";
@@ -86,6 +87,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
 					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horário" : "Indisponível")
 				);
+				$usuarios[] = $agendamentos[$index]["usuario"];
 			}else{
 				$partes = explode(":", $intervalo_padrao);
 				$hora_final = strtotime($hora_atual) + $partes[0]*3600 + $partes[1]*60 + $partes[2];
@@ -98,6 +100,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 					"mySchedule" => false,
 					"strAvailable" => "Horário disponível"
 				);
+				$usuarios[] = "0";
 			}
 			$hora_atual = strtotime($hora_atual) + 60;
 			$hora_atual = strftime('%H:%M:%S', $hora_atual);
@@ -114,6 +117,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
 					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horário" : "Indisponível")
 				);
+				$usuarios[] = $agendamentos[$index]["usuario"];
 			}
 			$hora_atual = strtotime($hora_atual) + 60;
 			$hora_atual = strftime('%H:%M:%S', $hora_atual);
@@ -124,7 +128,7 @@ function carregarAgenda($data, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 			$adicional = "00:00:00";
 		}
 	}
-	return $agenda;
+	return array($agenda, $usuarios);
 }
 
 ?>

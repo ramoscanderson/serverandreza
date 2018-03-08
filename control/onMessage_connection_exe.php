@@ -15,7 +15,7 @@ switch($messageObj->request->method){
 	case "updateScheduleByDay":
 		echo "Solicitacao de select de agenda recebida - " . $messageObj->request->data->date . "\n";
 		$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
-		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
+		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda[0]));
 		echo "Resposta enviada\n";
 		break;
 		
@@ -35,7 +35,28 @@ switch($messageObj->request->method){
 					echo "Atualizando demais dispositivos\n";
 					$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
 					foreach ($this->clients as $client) {
-						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
+						//echo "ID CONEXAO: $from->resourceId\n";
+						global $conexoes;
+						$usuario_atual = $conexoes["{$client->resourceId}"]["userId"];
+						//echo "{$client->resourceId} - userloop: " . $usuario_atual . "\n";
+						$nova_agenda;
+						$cont = 0;
+						foreach ($agenda[0] as $horario){
+							if($usuario_atual == $agenda[1][$cont]){
+								$agenda[0][$cont]["strAvailable"] = "Meu horário";
+								$agenda[0][$cont]["available"] = false;
+								$agenda[0][$cont]["mySchedule"] = true;
+							}else{
+								if($agenda[0][$cont]["strAvailable"] != "Horário disponível"){
+									$agenda[0][$cont]["strAvailable"] = "Indisponível";
+									$agenda[0][$cont]["available"] = false;
+									$agenda[0][$cont]["mySchedule"] = false;
+								}
+							}
+							$cont++;
+						}
+						//print_r($agenda[0]);
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda[0]));
 					}
 					echo "Dispositivos atualizados\n";
 					break;
@@ -64,7 +85,27 @@ switch($messageObj->request->method){
 					echo "Atualizando demais dispositivos\n";
 					$agenda = carregarAgenda($messageObj->request->data, getJWT($messageObj->token)->id);
 					foreach ($this->clients as $client) {
-						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda));
+						//echo "ID CONEXAO: $from->resourceId\n";
+						global $conexoes;
+						$usuario_atual = $conexoes["{$from->resourceId}"]["userId"];
+						$nova_agenda;
+						$cont = 0;
+						foreach ($agenda[0] as $horario){
+							if($usuario_atual == $agenda[1][$cont]){
+								$agenda[0][$cont]["strAvailable"] = "Meu horário";
+								$agenda[0][$cont]["available"] = false;
+								$agenda[0][$cont]["mySchedule"] = true;
+							}else{
+								if($agenda[0][$cont]["strAvailable"] != "Horário disponível"){
+									$agenda[0][$cont]["strAvailable"] = "Indisponível";
+									$agenda[0][$cont]["available"] = false;
+									$agenda[0][$cont]["mySchedule"] = false;
+								}
+							}
+							$cont++;
+						}
+						//print_r($agenda[0]);
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda[0]));
 					}
 					echo "Dispositivos atualizados\n";
 					break;
@@ -105,6 +146,8 @@ switch($messageObj->request->method){
 		}
 		if(is_array($user)){
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","signin",array("isSignIn" => true, "user" => (array)$user, "token" => setJWT($user['id']))));
+			global $conexoes;
+			$conexoes["{$from->resourceId}"] = array("userId"=>$user['id']);
 			echo "Resposta enviada\n";
 		}else{
 			echo "Nenhum usuario encontrado com os dados enviados\n";

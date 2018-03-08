@@ -17,6 +17,7 @@ date_default_timezone_set('America/Sao_Paulo');
 
 class Connection implements MessageComponentInterface {
 	protected $clients;
+	public $conexoes = array();
 
 	public function __construct() {
 		$this->clients = new \SplObjectStorage;
