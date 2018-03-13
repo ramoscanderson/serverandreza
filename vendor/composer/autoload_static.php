@@ -44,7 +44,6 @@ class ComposerStaticInit37281f4086470cd6b4b0550a208ed994
         array (
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Container\\' => 14,
-            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'M' => 
         array (
@@ -138,10 +137,6 @@ class ComposerStaticInit37281f4086470cd6b4b0550a208ed994
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
-        'PHPMailer\\PHPMailer\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
-        ),
         'MyApp\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',
@@ -188,6 +183,7 @@ class ComposerStaticInit37281f4086470cd6b4b0550a208ed994
         'Error' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/Error.php',
         'ParseError' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/ParseError.php',
         'SessionUpdateTimestampHandlerInterface' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/SessionUpdateTimestampHandlerInterface.php',
+        'SimpleMail' => __DIR__ . '/..' . '/eoghanobrien/php-simple-mail/class.simple_mail.php',
         'TypeError' => __DIR__ . '/..' . '/symfony/polyfill-php70/Resources/stubs/TypeError.php',
     );
 

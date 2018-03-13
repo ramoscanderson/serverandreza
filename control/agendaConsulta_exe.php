@@ -39,7 +39,7 @@ function inserirAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE 
 	$consulta->bindValue(5, $client);
 	$consulta->execute();
 	
-	if($consulta){
+	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
 		return "failed";
@@ -54,10 +54,6 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	$agenda = array();
 	$usuarios = array();
 	$agendamentos = array();
-	
-	$inicio_servico = "07:00:00";
-	$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
-	$intervalo_padrao = "01:00:00";
 	
 	$sql = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = 0 and cliente = ? ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	
@@ -75,6 +71,13 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 		echo "Nenhum registro encontrado\n";
 	}
 	
+	return $agendamentos;
+	
+}
+
+function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $usuario){
+	
+	$date = $agendamentos[0]["data"];
 	$hora_atual = $inicio_servico;
 	$adicional = "00:00:00";
 	while((strtotime($hora_atual) != strtotime($termino_servico) || strtotime($hora_atual) < strtotime($termino_servico))){// && $adicional == "00:00:00"
@@ -130,7 +133,8 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 			$adicional = "00:00:00";
 		}
 	}
-	return array($agenda, $usuarios);
+	//return array($agenda, $usuarios);
+	return $agenda;
 }
 
 ?>

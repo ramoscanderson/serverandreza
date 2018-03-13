@@ -12,5 +12,6 @@ return array(
     'Error' => $vendorDir . '/symfony/polyfill-php70/Resources/stubs/Error.php',
     'ParseError' => $vendorDir . '/symfony/polyfill-php70/Resources/stubs/ParseError.php',
     'SessionUpdateTimestampHandlerInterface' => $vendorDir . '/symfony/polyfill-php70/Resources/stubs/SessionUpdateTimestampHandlerInterface.php',
+    'SimpleMail' => $vendorDir . '/eoghanobrien/php-simple-mail/class.simple_mail.php',
     'TypeError' => $vendorDir . '/symfony/polyfill-php70/Resources/stubs/TypeError.php',
 );
