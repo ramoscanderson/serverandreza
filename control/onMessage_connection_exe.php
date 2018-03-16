@@ -109,6 +109,11 @@ switch($messageObj->request->method){
 				$from->send(message_setProtocol($messageObj->request->id,"607","Error - Could not insert record","1.0.5","setUser",array("isUser" => false)));
 				echo "Resposta enviada\n";
 				break;
+			case "-1":
+				echo "Erro ao enviar e-mail de confirmacao\n";
+				$from->send(message_setProtocol($messageObj->request->id,"607","Error - Could not send e-mail record","1.0.5","setUser",array("isUser" => true)));
+				echo "Resposta enviada\n";
+				break;
 			default:
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setUser",array("isUser" => true, "token" => setJWT($user))));
 				echo "Resposta enviada\n";				
@@ -159,13 +164,47 @@ switch($messageObj->request->method){
 			}
 		}
 		break;
+
+
+	case "generateNewKey":
+		echo "Solicitacao para gerar nova chave de usuario recebida\n";
+		$dados = consultaUsuarioEmail($messageObj->request->data, $messageObj->request->client); // VERIFICAR SE VAI CONTINUAR SENDO REALIZADA A BUSCA PELO EMAIL, CASO CONTINUE PODE TIRAR ESSE FUNÇÃO, MAS SE FOR PELO CPF DEVE-SE MUDAR ESSA FUNÇÃO E CONTINUAR ASSIM
+		$novaChave = gerarNovaChave($messageObj->request->client, $dados["id"]);
+		switch($novaChave){
+			case "success":
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","generateNewKey",array("isKey" => true)));
+				echo "Resposta enviada\n";				
+				break;
+			case "failed":
+				echo "Erro ao gerar nova chave do usuario\n";
+				$from->send(message_setProtocol($messageObj->request->id,"609","Error - Could not generate new key","1.0.5","generateNewKey",array("isKey" => false)));
+				echo "Resposta enviada\n";
+				break;
+		}
+		break;
+		
+	case "recoverPass":
+		echo "Solicitacao de recuperacao de senha recebida\n";
+		$novaSenha = gravarSenha($messageObj->request->data, $messageObj->request->client);
+		switch($novaChave){
+			case "success":
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","recoverPass",array("isRecovered" => true)));
+				echo "Resposta enviada\n";				
+				break;
+			case "failed":
+				echo "Erro ao gravar nova senha do usuario\n";
+				$from->send(message_setProtocol($messageObj->request->id,"610","Error - Could not recovered password","1.0.5","recoverPass",array("isRecovered" => false)));
+				echo "Resposta enviada\n";
+				break;
+		}
+		break;
 		
 		
 	case "jwt":
 		echo "Solicitacao de TESTE recebida\n";
 		//getJWT($messageObj->token);
-		envia_email($nome, $destinatario, $assunto, $mensagem);
-		
+		//envia_email("", $destinatario, $assunto, $mensagem);
+		envia_email("Código de verificação", "ticion@gmail.com", "System Confirmation", "Seja bem vindo " . "Anderson Caciator Ramos" . "\n\n" . "Este é seu código de verificação: " . "1234");
 		break;
 		
 		
