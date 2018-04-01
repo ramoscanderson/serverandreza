@@ -12,6 +12,7 @@ require ("control/agendaConsulta_exe.php");
 require ("control/usuario_exe.php");
 require ("control/token_exe.php");
 require ("control/email_exe.php");
+require ("control/planoAlimentar_exe.php");
 
 date_default_timezone_set('America/Sao_Paulo');
 

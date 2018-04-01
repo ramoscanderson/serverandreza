@@ -4,12 +4,18 @@ function cancelarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	require ("lib/bd.php");
 
 	$id = $data->id;
+	$motivo_id = $data->reasonForCancellation->id;
+	$motivo_descricao = $data->reasonForCancellation->description;
+	$motivo = ($motivo_id == "-1" ? $motivo_descricao : $motivo_id);
+	
+	echo "MOTIVO" . $motivo_id . "-" . $motivo_descricao . "\n";
 	
 	echo "Cancelando registro: $id\n";
 
-	$sql = "UPDATE agenda_consulta SET cancelado = 1 WHERE id = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "UPDATE agenda_consulta SET cancelado = ? WHERE id = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
-	$consulta->bindParam(1, $id);
+	$consulta->bindParam(1, $motivo);
+	$consulta->bindParam(2, $id);
 	$consulta->execute();
 
 	if($consulta){
@@ -40,6 +46,12 @@ function inserirAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE 
 	$consulta->execute();
 	
 	if($consulta->rowCount()){
+		/*
+		global $conexoes;
+		if(!envia_email("Você tem um novo agendamento", $conexoes["{$from->resourceId}"]["userEmail"], "Agendamento do nutricionista", "Olá " . $conexoes["{$from->resourceId}"]["userName"] . "\n\n" . "Você tem uma nova consulta agendada:\n " . $date  . "\n" . "Horário: " . $hour . "\n\n" . "Uma notificação de confirmação será enviada à você com 24 horas de antecedência.")){
+			return "failed";
+		}
+		*/
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
 		return "failed";
@@ -50,16 +62,18 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	require ("lib/bd.php");
 	
 	$date = $data->date;
+	$ativo = "0"; // 0 = não cancelado
 	
 	$agenda = array();
 	$usuarios = array();
 	$agendamentos = array();
 	
-	$sql = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = 0 and cliente = ? ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = ? and cliente = ? ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $date);
-	$consulta->bindParam(2, $client);
+	$consulta->bindParam(2, $ativo);
+	$consulta->bindParam(3, $client);
 	$consulta->execute();
 	
 	if ($consulta->rowCount() > 0) {
@@ -68,6 +82,7 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 			echo $row->id . " - " . $row->data . " - " . $row->hora_inicio . " - " . $row->hora_fim . " - " . $row->usuario . "\n";
 	   }
 	} else {
+		$agendamentos[] = array("id" => null, "data" => $date, "hora_inicio"=>null, "hora_fim"=>null, "usuario"=>0);
 		echo "Nenhum registro encontrado\n";
 	}
 	
@@ -137,4 +152,31 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 	return $agenda;
 }
 
+
+function carregarMotivosCancelamento($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	//$date = $data->date;
+
+	$motivos = array();
+
+	$sql = "SELECT * FROM motivos_cancelamento WHERE ativo = 1 "; //FAZER CORREÇÃO PARA MAIS CLIENTES
+
+	$consulta = $bd->prepare($sql);
+	$consulta->execute();
+
+	if ($consulta->rowCount() > 0) {
+	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			$motivos[] = array("id" => $row->id, "description" => $row->descricao);
+			echo $row->id . " - " . $row->descricao . "\n";
+	   }
+	   $motivos[] = array("id" => "-1", "description" => "Outros");
+	} else {
+		$motivos[] = array("id" => "-1", "description" => "Outros");
+		echo "Nenhum registro encontrado\n";
+	}
+
+	return $motivos;
+
+}
 ?>

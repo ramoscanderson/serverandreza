@@ -37,4 +37,19 @@ function isJson($string){
 	return is_string($string) && is_array(json_decode($string, true)) ?true : false;
 }
 
+function validar_estrutura_data($data, $array){
+	echo "Verificando estrutura de dados\n";
+	foreach ($array as $dado) {
+		echo $dado . "\n";
+		if(!array_key_exists($dado, $data)	){
+			return false;
+		}else{
+			if(empty($data->$dado)){
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 ?>
