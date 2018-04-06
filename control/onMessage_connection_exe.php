@@ -16,7 +16,7 @@ switch($messageObj->request->method){
 		echo "Solicitacao de select de agenda recebida - " . $messageObj->request->data->date . "\n";
 		if(!validar_estrutura_data($messageObj->request->data, array("date"))){
 			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("updateScheduleByDay" => false)));
-			echo "Dados necessários nao recebidos\n";
+			echo "Dados necessarios nao recebidos\n";
 			echo "Resposta enviada\n";
 			break;
 		}
@@ -42,7 +42,7 @@ switch($messageObj->request->method){
 			echo "Solicitacao de insert de agenda recebida\n";
 			if(!validar_estrutura_data($messageObj->request->data, array("date","hour"))){
 				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isSchedule" => false)));
-				echo "Dados necessários nao recebidos\n";
+				echo "Dados necessarios nao recebidos\n";
 				echo "Resposta enviada\n";
 				break;
 			}
@@ -85,7 +85,7 @@ switch($messageObj->request->method){
 			echo "Solicitacao de cancel de agenda recebida\n";
 			if(!validar_estrutura_data($messageObj->request->data, array("id","reasonForCancellation"))){// FALTA O ARRAY reasonForCancellation
 				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isScheduleCanceled" => false)));
-				echo "Dados necessários nao recebidos\n";
+				echo "Dados necessarios nao recebidos\n";
 				echo "Resposta enviada\n";
 				break;
 			}
@@ -138,7 +138,7 @@ switch($messageObj->request->method){
 		echo "Solicitacao de insert de usuario recebida\n";
 		if(!validar_estrutura_data($messageObj->request->data, array("name","cpf","email","phone","password"))){
 			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isUser" => false)));
-			echo "Dados necessários nao recebidos\n";
+			echo "Dados necessarios nao recebidos\n";
 			echo "Resposta enviada\n";
 			break;
 		}
@@ -168,18 +168,12 @@ switch($messageObj->request->method){
 		if(isVisitante($messageObj->token)){
 			if(!validar_estrutura_data($messageObj->request->data, array("user","password"))){
 				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isSignIn" => false)));
-				echo "Dados necessários nao recebidos\n";
+				echo "Dados necessarios nao recebidos\n";
 				echo "Resposta enviada\n";
 				break;
 			}
 			$user = consultaUsuario($messageObj->request->data, $messageObj->request->client);
 		}else{
-			if(!validar_estrutura_data($messageObj->request->data, array("id"))){
-				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isSignIn" => false)));
-				echo "Dados necessários nao recebidos\n";
-				echo "Resposta enviada\n";
-				break;
-			}
 			$user = consultaUsuario(getJWT($messageObj->token), $messageObj->request->client);
 		}
 		if(is_array($user)){
@@ -204,7 +198,7 @@ switch($messageObj->request->method){
 			echo "Solicitacao de validacao de usuario recebida\n";
 			if(!validar_estrutura_data($messageObj->request->data, array("cod"))){
 				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isConfirmed" => false)));
-				echo "Dados necessários nao recebidos\n";
+				echo "Dados necessarios nao recebidos\n";
 				echo "Resposta enviada\n";
 				break;
 			}
@@ -228,7 +222,7 @@ switch($messageObj->request->method){
 		echo "Solicitacao para gerar nova chave de usuario recebida\n";
 		if(!validar_estrutura_data($messageObj->request->data, array("cpf"))){
 			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isConfirmed" => false)));
-			echo "Dados necessários nao recebidos\n";
+			echo "Dados necessarios nao recebidos\n";
 			echo "Resposta enviada\n";
 			break;
 		}
@@ -256,7 +250,7 @@ switch($messageObj->request->method){
 		echo "Solicitacao de recuperacao de senha recebida\n";
 		if(!validar_estrutura_data($messageObj->request->data, array("password","cod"))){
 			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isConfirmed" => false)));
-			echo "Dados necessários nao recebidos\n";
+			echo "Dados necessarios nao recebidos\n";
 			echo "Resposta enviada\n";
 			break;
 		}
@@ -264,6 +258,7 @@ switch($messageObj->request->method){
 		$novaSenha = gravarSenha($messageObj->request->data, $messageObj->request->client, $conexoes["{$from->resourceId}"]["cpf"]);
 		switch($novaSenha){
 			case "success":
+				echo "NEWID: " . $conexoes["{$from->resourceId}"]["newUserId"] . "\n";
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","recoverPassword",array("isRecovered" => true, "token" => setJWT($conexoes["{$from->resourceId}"]["newUserId"]))));
 				echo "Resposta enviada\n";				
 				break;
@@ -289,6 +284,74 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}
 		break;
+
+
+	case "addConsumption":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","addConsumption",array("isConsumption" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Solicitacao para adicionar consumo de refeicao recebida\n";
+			if(!validar_estrutura_data($messageObj->request->data, array("mealId","foodId","planId"))){
+				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","addConsumption",array("isConsumption" => false)));
+				echo "Dados necessarios nao recebidos\n";
+				echo "Resposta enviada\n";
+				break;
+			}
+			$consumo = addConsumo($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			
+			switch($consumo){
+				case "success":
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","addConsumption",array("isConsumption" => true)));
+					echo "Resposta enviada\n";
+					echo "Atualizando dispositivo\n";
+					$plano_alimentar = carregarPlanoAlimentar($messageObj->request->client, getJWT($messageObj->token)->id);
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					echo "Resposta enviada\n";
+					break;
+				case "failed":
+					echo "Erro ao gravar registro no consumo de alimento\n";
+					$from->send(message_setProtocol($messageObj->request->id,"603","Error - Could not insert record","1.0.5","addConsumption",array("isConsumption" => false)));
+					echo "Resposta enviada\n";
+					break;
+			}
+		}
+		break;
+
+
+	case "cancelConsumption":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","addConsumption",array("isConsumption" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Solicitacao para cancelar consumo de refeicao recebida\n";
+			if(!validar_estrutura_data($messageObj->request->data, array("mealId","foodId","planId"))){
+				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","addConsumption",array("isConsumption" => false)));
+				echo "Dados necessarios nao recebidos\n";
+				echo "Resposta enviada\n";
+				break;
+			}
+			$consumo = cancelarConsumo($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+
+			switch($consumo){
+				case "success":
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelConsumption",array("isCanceledConsumption" => true)));
+					echo "Resposta enviada\n";
+					echo "Atualizando dispositivo\n";
+					$plano_alimentar = carregarPlanoAlimentar($messageObj->request->client, getJWT($messageObj->token)->id);
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					echo "Resposta enviada\n";
+					break;
+				case "failed":
+					echo "Erro ao cancelar registro no consumo de alimento\n";
+					$from->send(message_setProtocol($messageObj->request->id,"604","Error - Could not canceled record","1.0.5","cancelConsumption",array("isCanceledConsumption" => false)));
+					echo "Resposta enviada\n";
+					break;
+			}
+		}
+		break;
 		
 		
 	case "jwt":
@@ -302,6 +365,7 @@ switch($messageObj->request->method){
 			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isRecovered" => false)));
 			break;
 		}
+		Add consumption
 		echo "teste\n";
 		*/
 		
