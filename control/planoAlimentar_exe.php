@@ -3,7 +3,7 @@
 function carregarPlanoAlimentar($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
-	if($usuario != "1"){
+	if($usuario != "2"){
 		$usuario = 3;
 	}
 	
@@ -17,11 +17,12 @@ function carregarPlanoAlimentar($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 	FROM (plano_alimentar, refeicao, alimento, receita) LEFT JOIN consumo_alimento ON 
 	consumo_alimento.alimento = alimento.id and 
 	consumo_alimento.plano_alimentar = plano_alimentar.id and 
-	consumo_alimento.refeicao = refeicao.id WHERE 
+	consumo_alimento.refeicao = refeicao.id and 
+	consumo_alimento.cancelado = ?
+	WHERE 
 	alimento.receita = receita.id and 
 	alimento.refeicao = refeicao.id and 
 	refeicao.plano_alimentar = plano_alimentar.id and
-	consumo_alimento.cancelado = ? and 
 	alimento.cancelado = ? and 
 	refeicao.cancelado = ? and 
 	plano_alimentar.cancelado = ? and 
@@ -121,18 +122,20 @@ function cancelarConsumo($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 	$alimento = $data->foodId;
 	$refeicao = $data->mealId;
 	$plano = $data->planId;
-	$date_hour = date('Y-m-d H:i:s');
+	$date_hour = date('Y-m-d');
+	$cancelado = 1; 
 
-	echo "Cancelando consumo de refeicao\n";
+	echo "Cancelando consumo de refeicao . $date_hour . \n";
 
-	$sql = "UPDATE consumo_alimento SET cancelado = 1 where alimento = ? and refeicao = ? and plano_alimentar = ? and FORMAT(data, 'yyyy-MM-dd') = ? and cliente = ? and usuario = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "UPDATE consumo_alimento SET cancelado = ? where alimento = ? and refeicao = ? and plano_alimentar = ? and CAST(data AS DATE) = ? and cliente = ? and usuario = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
-	$consulta->bindValue(1, $alimento);
-	$consulta->bindValue(2, $refeicao);
-	$consulta->bindValue(3, $plano);
-	$consulta->bindValue(4, $date_hour);
-	$consulta->bindValue(5, $client);
-	$consulta->bindValue(6, $usuario);
+	$consulta->bindValue(1, $cancelado);
+	$consulta->bindValue(2, $alimento);
+	$consulta->bindValue(3, $refeicao);
+	$consulta->bindValue(4, $plano);
+	$consulta->bindValue(5, $date_hour);
+	$consulta->bindValue(6, $client);
+	$consulta->bindValue(7, $usuario);
 	$consulta->execute();
 
 

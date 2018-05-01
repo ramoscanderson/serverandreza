@@ -7,21 +7,27 @@ use PHPMailer\PHPMailer\Exception;
 require("model/class.phpmailer.php");
 require("model/class.smtp.php");
 
+require ("control/functions.php");
 require ("control/messageProtocol_exe.php");
 require ("control/agendaConsulta_exe.php");
 require ("control/usuario_exe.php");
 require ("control/token_exe.php");
 require ("control/email_exe.php");
 require ("control/planoAlimentar_exe.php");
+require ("control/news_exe.php");
 
 date_default_timezone_set('America/Sao_Paulo');
 
 class Connection implements MessageComponentInterface {
 	protected $clients;
 	public $conexoes = array();
-
+	
 	public function __construct() {
 		$this->clients = new \SplObjectStorage;
+	}
+	
+	public function getClient(){
+		return $this->clients;
 	}
 
 	public function onOpen(ConnectionInterface $conn) {
