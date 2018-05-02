@@ -44,9 +44,11 @@ function validar_estrutura_data($data, $array){
 		if(!array_key_exists($dado, $data)	){
 			return false;
 		}else{
+			/*
 			if(empty($data->$dado)){
 				return false;
 			}
+			*/
 		}
 	}
 	return true;

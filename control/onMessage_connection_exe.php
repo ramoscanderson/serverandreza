@@ -21,7 +21,7 @@ switch($messageObj->request->method){
 		$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
 		$intervalo_padrao = "01:00:00";
 
-		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id);
+		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMySchedules",$agenda[1]));
 		print_r($agenda[1]);
 		echo "Resposta enviada\n";
@@ -42,7 +42,7 @@ switch($messageObj->request->method){
 		$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
 		$intervalo_padrao = "01:00:00";
 
-		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id);
+		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda[0]));
 		//print_r($agenda);
 		echo "Resposta enviada\n";
@@ -62,6 +62,15 @@ switch($messageObj->request->method){
 				echo "Resposta enviada\n";
 				break;
 			}
+			echo "Validando autorizacao de agendamento\n";
+			if(!validarAgendamentoUsuario(getJWT($messageObj->token)->id, $messageObj->request->client)){
+				echo "Agendamento nao autorizado\n";
+				$from->send(message_setProtocol($messageObj->request->id,"612","Error - Unauthorized Scheduling","1.0.5","setSchedule",array("isSchedule" => false)));
+				echo "Resposta enviada\n";
+				break;
+			}else{
+				echo "Agendamento autorizado\n";
+			}
 			$agenda = inserirAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			switch($agenda){
 				case "success":
@@ -76,7 +85,7 @@ switch($messageObj->request->method){
 					$intervalo_padrao = "01:00:00";
 
 					foreach ($this->clients as $client) {
-						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"]);
+						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
 						echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
 						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",(array)$agenda[0]));
 					}
@@ -119,7 +128,7 @@ switch($messageObj->request->method){
 					$intervalo_padrao = "01:00:00";
 
 					foreach ($this->clients as $client) {
-						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"]);
+						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
 						echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
 						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",(array)$agenda[0]));
 					}
@@ -158,7 +167,17 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 			break;
 		}
-		$user = cadastraUsuario($messageObj->request->data, $messageObj->request->client);
+		$user;
+		echo "Validando autorizacao de cadastro\n";
+		if(validaCadastroUsuario($messageObj->request->data, $messageObj->request->client)){
+			echo "Cadastro de usuario autorizado\n";
+   			$user = cadastraUsuario($messageObj->request->data, $messageObj->request->client);
+		}else{
+			echo "Cadastro de usuario nao autorizado\n";//------------------------------------------------------------------------------------------------------------------------------------------ CONTINUAR AQUI
+			$from->send(message_setProtocol($messageObj->request->id,"613","Error - Unauthorized Register","1.0.5","setUser",array("isUser" => false)));
+			echo "Resposta enviada\n";
+			break;
+		}
 		switch($user){
 			case "0":
 				echo "Erro ao gravar registro usuario\n";
@@ -168,6 +187,31 @@ switch($messageObj->request->method){
 			case "-1":
 				echo "Erro ao enviar e-mail de confirmacao\n";
 				$from->send(message_setProtocol($messageObj->request->id,"607","Error - Could not send e-mail record","1.0.5","setUser",array("isUser" => true)));
+				echo "Resposta enviada\n";
+				break;
+			case "-2":
+				echo "Erro, nome invalido\n";
+				$from->send(message_setProtocol($messageObj->request->id,"614","Error - Invalid name","1.0.5","setUser",array("isUser" => false)));
+				echo "Resposta enviada\n";
+				break;
+			case "-3":
+				echo "Erro, cpf invalido\n";
+				$from->send(message_setProtocol($messageObj->request->id,"615","Error - Invalid cpf","1.0.5","setUser",array("isUser" => false)));
+				echo "Resposta enviada\n";
+				break;
+			case "-4":
+				echo "Erro, e-mail invalido\n";
+				$from->send(message_setProtocol($messageObj->request->id,"616","Error - Invalid e-mail","1.0.5","setUser",array("isUser" => false)));
+				echo "Resposta enviada\n";
+				break;
+			case "-5":
+				echo "Erro, telefone invalido\n";
+				$from->send(message_setProtocol($messageObj->request->id,"617","Error - Invalid phone","1.0.5","setUser",array("isUser" => false)));
+				echo "Resposta enviada\n";
+				break;
+			case "-6":
+				echo "Erro, senha invalida\n";
+				$from->send(message_setProtocol($messageObj->request->id,"618","Error - Invalid password","1.0.5","setUser",array("isUser" => false)));
 				echo "Resposta enviada\n";
 				break;
 			default:
