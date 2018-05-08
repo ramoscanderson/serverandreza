@@ -13,18 +13,24 @@ switch($messageObj->request->method){
 	
 	
 	case "updateMySchedules":
-		echo "Solicitacao de select de agenda individual recebida\n";
-		
-		$agendamentos = carregarAgendaUsuario($messageObj->request->client, getJWT($messageObj->token)->id);
-
-		$inicio_servico = "07:00:00";
-		$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
-		$intervalo_padrao = "01:00:00";
-
-		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
-		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMySchedules",$agenda[1]));
-		print_r($agenda[1]);
-		echo "Resposta enviada\n";
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updateMySchedules",array("updateMySchedules" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Solicitacao de select de agenda individual recebida\n";
+   
+			$agendamentos = carregarAgendaUsuario($messageObj->request->client, getJWT($messageObj->token)->id);
+   
+			$inicio_servico = "07:00:00";
+			$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES ----------- ESTES DADOS SE REPETEM NO LOOP DE CONFIRMAÇÃO DA AGENDA
+			$intervalo_padrao = "01:00:00";
+   
+			$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMySchedules",$agenda[1]));
+			print_r($agenda[1]);
+			echo "Resposta enviada\n";
+		}
 		break;
 
 
@@ -57,7 +63,7 @@ switch($messageObj->request->method){
 		}else{
 			echo "Solicitacao de insert de agenda recebida\n";
 			if(!validar_estrutura_data($messageObj->request->data, array("date","hour"))){
-				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isSchedule" => false)));
+				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","setSchedule",array("isSchedule" => false)));
 				echo "Dados necessarios nao recebidos\n";
 				echo "Resposta enviada\n";
 				break;
@@ -109,7 +115,7 @@ switch($messageObj->request->method){
 		}else{
 			echo "Solicitacao de cancel de agenda recebida\n";
 			if(!validar_estrutura_data($messageObj->request->data, array("id","reasonForCancellation"))){// FALTA O ARRAY reasonForCancellation
-				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isScheduleCanceled" => false)));
+				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","cancelSchedule",array("isScheduleCanceled" => false)));
 				echo "Dados necessarios nao recebidos\n";
 				echo "Resposta enviada\n";
 				break;
@@ -162,7 +168,7 @@ switch($messageObj->request->method){
 	case "setUser":
 		echo "Solicitacao de insert de usuario recebida\n";
 		if(!validar_estrutura_data($messageObj->request->data, array("name","cpf","email","phone","password"))){
-			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("isUser" => false)));
+			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","setUser",array("isUser" => false)));
 			echo "Dados necessarios nao recebidos\n";
 			echo "Resposta enviada\n";
 			break;
@@ -232,8 +238,10 @@ switch($messageObj->request->method){
 				echo "Resposta enviada\n";
 				break;
 			}
+			echo "CPF SENHA " . $messageObj->request->data->user . " " . $messageObj->request->data->password . " " . $messageObj->request->client . "\n";
 			$user = consultaUsuario($messageObj->request->data, $messageObj->request->client);
 		}else{
+			echo "nao visitante ID " . getJWT($messageObj->token)->id . " " . $messageObj->request->client . "\n";
 			$user = consultaUsuario(getJWT($messageObj->token), $messageObj->request->client);
 		}
 		if(is_array($user)){
@@ -417,7 +425,7 @@ switch($messageObj->request->method){
 	case "updateUserData":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
-			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","addConsumption",array("isConsumption" => false)));
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updateUserData",array("isUpdateUserData" => false)));
 			echo "Resposta enviada\n";
 		}else{
 			echo "Solicitacao para update de dados de usuario recebida\n";
@@ -499,7 +507,7 @@ switch($messageObj->request->method){
 	case "updateCategoriesNewsSelected":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
-			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updateCategoriesNews",array("updateCategoriesNews" => false)));
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updateCategoriesNewsSelected",array("isUpdate" => false)));
 			echo "Resposta enviada\n";
 		}else{
 			echo $msg . "\n";
@@ -554,47 +562,49 @@ switch($messageObj->request->method){
 			}			
 		}
 		break;
+
+
+
+
+	case "changeImageAvatar":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","changeImageAvatar",array("isChange" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
+			echo "Novo arquivo de imagem criado: " . $nome . "\n";
+			$arquivo = fopen("img/avatar/" . $nome . ".jpeg", "wb");
+			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->img)));
+			fclose($arquivo);
+			echo "Arquivo escrito com os dados do usuario \n";
+			$salvar = atualizaAvatar("http://179.184.92.74:3397/nutriv5/img/avatar/" . $nome . ".jpeg", getJWT($messageObj->token)->id, $messageObj->request->client);
+			if($salvar == "success"){
+				echo "arquivo salvo com sucesso \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","changeImageAvatar",array("isChange" => true, "path" => "http://179.184.92.74:3397/nutriv5/img/avatar/" . $nome . ".jpeg")));
+			}else{
+				echo "erro ao salvar o arquivo \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","changeImageAvatar",array("isChange" => false, "path" => null)));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
 		
 		
 	case "jwt":
 		echo "Solicitacao de TESTE recebida\n";
+		$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
+		echo "NOME " . $nome . "\n";
+		$arquivo = fopen("img/" . $nome . ".png", "wb");
+		//echo "CRIANDO ARQUIVO: " . $messageObj->request->data . " \n";
+		$escreve = fwrite($arquivo, base64_decode($messageObj->request->data->img));
+		//echo "CRIANDO ARQUIVO: " . $img_b64 . " \n";
+		//$escreve = fwrite($arquivo, base64_decode($img_b64));
+		fclose($arquivo);
+		echo "ARQUIVO: " . base64_decode($messageObj->request->data->img) . " \n";
+		//echo "ARQUIVO: " . base64_decode($img_b64) . " \n";
+		echo "ARQUIVO CRIADO \n";
 		
-		//$img = imagecreatefromjpeg('img/walnut-2566274_640.jpg');
-		//$image = imagecreatefromjpeg($img);
-			//$imagem = file_get_contents('img/walnut-2566274_640.jpg');
-		//converte a imagem em string base64
-		//echo base64_encode($imagem);
-		
-		
-		$path = 'img/walnut-2566274_640.jpg';
-		// faça as verificações de validade da imagem...
-   		$image = WideImage::load($path);
-		// scala:
-		$width = $_GET['width']; // verifique se é válido.
-		if($width > 0){
-			$scale = $image->getWidth()/$width;
-		}else{
-			//tratar caso de largura inválida.
-		}   
-		// Calcula a altura equivalente a largura passada.
-		$height = $image->getHeight() * $scale;
-   
-		$resizedImage = $image->resize($width, $height);
-   
-		// Daqui para frente você faz o que deve fazer com sua imagem.
-		// Por exemplo:
-		//$resizedImage->saveToFile('imagem_redimencionada.jpg');
-		// Ou:
-		//header("Content-type: image/jpeg");
-		//$resizedImage->output('jpg', 100); // Onde 100 é a qualidade em %
-		
-		
-		
-		//echo "IMAGEM = " . base64_encode($imagem) . "\n";
-		$from->send(message_setProtocol($messageObj->request->id,"604","Error - Could not canceled record","1.0.5","teste",array("img" => "teste")));
-		echo date('H:i:s d-m-Y') . "\n";
-		$from->send(message_setProtocol($messageObj->request->id,"604","Error - Could not canceled record","1.0.5","testeimg",array("img" => base64_encode($resizedImage))));
-		echo date('H:i:s d-m-Y') . "\n";
 		
 		break;
 

@@ -63,7 +63,7 @@ function validarAgendamentoUsuario($usuario, $client){ //FAZER CÓDIGO QUE VERIF
 
 	$ativo = "0"; // 0 = não cancelado
 
-	$sql = "SELECT count(*) as qtd FROM agenda_consulta WHERE data > DATE_FORMAT(now(), '%Y-%m %d') and cancelado = ? and cliente = ? and usuario = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "SELECT count(*) as qtd FROM agenda_consulta WHERE data > DATE_FORMAT(now(), '%Y-%m-%d') and cancelado = ? and cliente = ? and usuario = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	// DATE_FORMAT(DATE_ADD(now(), INTERVAL -3 DAY), '%Y-%m %d')
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $ativo);
