@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 $numRecv = count($this->clients) - 1;
 echo sprintf("\n" . 'Conexao %d enviou uma requisicao - ' . date('H:i:s d-m-Y') . "\n", $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
@@ -31,6 +31,19 @@ switch($messageObj->request->method){
 			print_r($agenda[1]);
 			echo "Resposta enviada\n";
 		}
+		break;
+
+
+	case "scheduleFollowUp": 
+		echo "Solicitacao de select de agenda administrador recebida" . "\n";
+		
+		$agendamentos = carregarAgenda7Days($messageObj->request->client, getJWT($messageObj->token)->id);
+	
+		print_r($agendamentos);
+		
+		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","scheduleFollowUp",$agendamentos));
+		//print_r($agenda);
+		echo "Resposta enviada\n";
 		break;
 
 
@@ -248,6 +261,7 @@ switch($messageObj->request->method){
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","signIn",array("isSignIn" => true, "user" => (array)$user, "token" => setJWT($user['id']))));
 			global $conexoes;
 			$conexoes["{$from->resourceId}"] = array("userId"=>$user['id'], "userEmail"=>$user['email'], "userName"=>$user['name']);
+			inserirLog("signIn - Usuário " . $user['name'] . " realizou login.", $messageObj->request->client, $user['id']);
 			echo "Resposta enviada\n";
 		}else{
 			echo "Nenhum usuario encontrado com os dados enviados\n";
@@ -564,8 +578,81 @@ switch($messageObj->request->method){
 		break;
 
 
+	case "setFeedNews":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setFeedNews",array("isSetFeedNews" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
+			echo "Novo arquivo de imagem criado: " . $nome . "\n";
+			$arquivo = fopen("img/news/" . $nome . ".jpeg", "wb");
+			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->img)));
+			fclose($arquivo);
+			echo "Arquivo escrito \n";
+
+			$salvar = inserirNew("http://179.184.92.74:3397/nutriv5/img/news/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			
+			if($salvar == "success"){
+				echo "new inserida com sucesso \n";
+				echo "Atualizando demais dispositivos\n";
+				$news = carregarNew($messageObj->request->client);
+				global $conexoes;
+				foreach ($this->clients as $client) {
+					echo "Enviando news para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+					$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateNews",$news));
+				}
+				echo "Dispositivos atualizados\n";
+				
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFeedNews",array("isSetFeedNews" => true)));
+			}else{
+				echo "erro ao inserir a new \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFeedNews",array("isSetFeedNews" => false)));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
 
 
+	case "setCategory":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setFeedNews",array("isSetFeedNews" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "inserindo nova categoria \n";
+			$salvar = inserirCategoria($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			if($salvar == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setCategory",array("isSetCategory" => true)));
+			}else{
+				echo "erro ao inserir a categoria \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setCategory",array("isSetCategory" => false)));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
+	case "patientFollowUp":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","patientFollowUp",null));
+			echo "Resposta enviada\n";
+		}else{
+			echo "requisicao de acompanhamento de pacientes \n";
+			$acompanhamento = carregarAcompanhamento($messageObj->request->client);
+			if($acompanhamento == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","patientFollowUp",$acompanhamento));
+			}else{
+				echo "erro ao requisitar acompanhamento \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","patientFollowUp",$acompanhamento));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
+	
 	case "changeImageAvatar":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
@@ -622,6 +709,7 @@ switch($messageObj->request->method){
 		
 	default:
 		echo "Solicitacao nao reconhecida recebida\n";
+		echo $msg . "\n";
 		$from->send(message_setProtocol($messageObj->request->id,"602","Error - Unrecognized request","1.0.5","errorRequest",array()));
 		echo "Resposta default enviada\n";
 		break;

@@ -163,6 +163,95 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	
 }
 
+function carregarAgenda7Days($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$date = date("Y-m-d");
+	$date7  = date("Y-m-d", mktime(0, 0, 0, date("m")  , date("d")+7, date("Y")));
+	echo $date . "\n";
+	echo $date7 . "\n";
+	$ativo = "0"; // 0 = não cancelado
+
+	$agenda = array();
+	$usuarios = array();
+	$agendamentos = array();
+
+	$sql2 = "SELECT * FROM agenda_consulta WHERE data = ? and cancelado = ? and cliente = ? ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+
+	$sql = "SELECT 
+				(DATE_FORMAT(agenda_consulta.data, '%w')),
+				agenda_consulta.id as agenda_id, 
+				agenda_consulta.data as agenda_data, 
+				agenda_consulta.hora_inicio as agenda_hora_inicio, 
+				agenda_consulta.hora_fim as agenda_hora_fim, 
+				agenda_consulta.usuario as agenda_usuario, 
+				agenda_consulta.cliente as agenda_cliente, 
+				agenda_consulta.cancelado as agenda_cancelado, 
+				agenda_consulta.confirmado as agenda_confirmado,
+				localizacao.id as localizacao_id,
+				localizacao.titulo_endereco as localizacao_titulo_endereco,
+				localizacao.subtitulo_endereco as localizacao_subtitulo_endereco,
+				localizacao.coordenada as localizacao_coordenada,
+				localizacao.img as localizacao_img,
+				localizacao_semana.indisponivel as localizacao_semana_indisponivel, 
+				usuario.nome as usuario_nome,
+				usuario.telefone as usuario_telefone
+			FROM 
+				(agenda_consulta, localizacao, localizacao_semana, usuario) LEFT JOIN localizacao_excecao 
+			ON
+				IF(localizacao_excecao.localizacao = null, localizacao_semana.localizacao, localizacao_excecao.localizacao) = localizacao.id and
+				agenda_consulta.data = localizacao_excecao.data and
+				localizacao_excecao.data = agenda_consulta.data and
+				agenda_consulta.usuario = usuario.id and
+				localizacao_excecao.cliente = ? and
+				localizacao_excecao.cancelado = ?
+			WHERE 
+				localizacao.id = localizacao_semana.localizacao and
+				(DATE_FORMAT(agenda_consulta.data, '%w')) = localizacao_semana.dia_semana and
+				agenda_consulta.data >= ? and 
+				agenda_consulta.data <= ? and 
+				agenda_consulta.usuario = usuario.id and
+				agenda_consulta.cancelado = ? and
+				agenda_consulta.cliente = ? and
+				localizacao.cliente = ? and
+				localizacao_semana.cliente = ? 
+			ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES       if(500<1000, "yes", "no")
+
+	$consulta = $bd->prepare($sql);
+	/*
+	$consulta->bindParam(1, $date);
+	$consulta->bindParam(2, $ativo);
+	$consulta->bindParam(3, $client);
+	*/
+
+	$consulta->bindParam(1, $client);
+	$consulta->bindParam(2, $ativo);
+	$consulta->bindParam(3, $date);
+	$consulta->bindParam(4, $date7);
+	$consulta->bindParam(5, $ativo);
+	$consulta->bindParam(6, $client);
+	$consulta->bindParam(7, $client);
+	$consulta->bindParam(8, $client);
+
+
+	$consulta->execute();
+
+	if ($consulta->rowCount() > 0) {
+	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			$agendamentos[] = array("id" => $row->agenda_id, "data" => $row->agenda_data, "horario"=>substr($row->agenda_hora_inicio, 0, -3) . " às " . substr($row->agenda_hora_fim, 0, -3), "usuario_id"=>$row->agenda_usuario, "usuario_nome"=>$row->usuario_nome, "usuario_telefone"=>$row->usuario_telefone, "titleAdress"=>$row->localizacao_titulo_endereco, "subTitleAdress"=>$row->localizacao_subtitulo_endereco, "destination"=>$row->localizacao_coordenada, "imgDestination"=>$row->localizacao_img);
+			//$agendamentos[] = array("id" => $row->id, "data" => $row->data, "hora_inicio"=>$row->hora_inicio, "hora_fim"=>$row->hora_fim, "usuario"=>$row->usuario);
+			echo $row->agenda_id . " - " . $row->agenda_data . " - " . $row->agenda_hora_inicio . " - " . $row->agenda_hora_fim . " - " . $row->agenda_usuario . "\n";
+			//echo $row->id . " - " . $row->data . " - " . $row->hora_inicio . " - " . $row->hora_fim . " - " . $row->usuario . "\n";
+	   }
+	} else {
+		$agendamentos[] = array("id" => null, "data" => null, "horario"=>null, "usuario_id"=>null, "usuario_nome"=>null, "usuario_telefone"=>null, "titleAdress"=>null, "subTitleAdress"=>null, "destination"=>null, "imgDestination"=>null);
+		echo "Nenhum registro encontrado\n";
+	}
+
+	return $agendamentos;
+
+}
+
 function carregarAgendaUsuario($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 

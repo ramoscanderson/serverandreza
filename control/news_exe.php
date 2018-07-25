@@ -20,33 +20,45 @@ function cancelarNew($id){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORR
 	}
 }
 
-function inserirNew($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function inserirNew($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
-	$date = $data->date;
-	$hour = $data->hour;
-	$partes = explode(" às ", $hour);
-	$hora_inicio = str_replace("h", ":" ,$partes[0]) . ":00";
-	$hora_fim = str_replace("h", ":" ,$partes[1]) . ":00";
+	$date = date("Y-m-d H-i-s");
+	echo $date . "\n";
+	$imagem = $img; //$data->img;
+	echo $imagem . "\n";
+	$avatar = "http://souzapapaleo.com.br/mailer/img/icone.png";
+	echo $avatar . "\n";
+	$conteudo = $data->content;
+	echo $conteudo . "\n";
+	echo $usuario . "\n";
+	echo $client . "\n";
+	$cancelado = 0;
+	echo $cancelado . "\n";
 	
-	echo "Inserindo registro: $date - $hora_inicio - $hora_fim - $usuario\n";
+	echo "Inserindo new\n";
 	
-	$sql = "INSERT INTO agenda_consulta (data, hora_inicio, hora_fim, usuario, cliente) VALUES (?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "INSERT INTO news (data_postagem, img, avatar, conteudo, usuario, cliente, cancelado) VALUES (?, ?, ?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
 	$consulta->bindValue(1, $date);
-	$consulta->bindValue(2, $hora_inicio);
-	$consulta->bindValue(3, $hora_fim);
-	$consulta->bindValue(4, $usuario);
-	$consulta->bindValue(5, $client);
+	$consulta->bindValue(2, $imagem);
+	$consulta->bindValue(3, $avatar);
+	$consulta->bindValue(4, $conteudo);
+	$consulta->bindValue(5, $usuario);
+	$consulta->bindValue(6, $client);
+	$consulta->bindValue(7, $cancelado);
 	$consulta->execute();
 	
 	if($consulta->rowCount()){
-		/*
-		global $conexoes;
-		if(!envia_email("Você tem um novo agendamento", $conexoes["{$from->resourceId}"]["userEmail"], "Agendamento do nutricionista", "Olá " . $conexoes["{$from->resourceId}"]["userName"] . "\n\n" . "Você tem uma nova consulta agendada:\n " . $date  . "\n" . "Horário: " . $hour . "\n\n" . "Uma notificação de confirmação será enviada à você com 24 horas de antecedência.")){
-			return "failed";
-		}
-		*/
+		foreach ($data->categories as $categorie) {
+			$sql = "INSERT INTO news_categorias (new, categoria, cancelado) VALUES ((select max(id) from news where cliente = ?), (select id from categorias where nome = ? and cliente = ?), ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+			$consulta = $bd->prepare($sql);
+			$consulta->bindValue(1, $client);
+			$consulta->bindValue(2, $categorie);
+			$consulta->bindValue(3, $client);
+			$consulta->bindValue(4, $cancelado);
+			$consulta->execute();
+		}		
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
 		return "failed";
@@ -112,6 +124,27 @@ function carregarNew($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM 
 		echo "Nenhum registro encontrado\n";
 	}
 	return $news;	
+}
+
+function inserirCategoria($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$categoria = $data->categorie;	
+
+	echo "Inserindo registro de Categoria\n";
+
+	$sql = "INSERT INTO categorias (nome, usuario, cliente) VALUES (?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$consulta = $bd->prepare($sql);
+	$consulta->bindValue(1, $categoria);
+	$consulta->bindValue(2, $usuario);
+	$consulta->bindValue(3, $client);
+	$consulta->execute();
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
 }
 
 function carregarCategoriasNew($client){
