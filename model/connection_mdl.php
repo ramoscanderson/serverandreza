@@ -16,6 +16,7 @@ require ("control/email_exe.php");
 require ("control/planoAlimentar_exe.php");
 require ("control/news_exe.php");
 require ("control/consultas_exe.php");
+require ("control/medidas_exe.php");
 require ("control/log_exe.php");
 
 date_default_timezone_set('America/Sao_Paulo');

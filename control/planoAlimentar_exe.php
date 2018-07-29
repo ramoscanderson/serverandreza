@@ -146,4 +146,143 @@ function cancelarConsumo($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 	}
 }
 
+
+function addPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$paciente = $data->idUser;
+	$nome = $data->name;
+	$date = date('Y-m-d');
+	$cancelado = 0;
+
+	echo "Inserindo plano alimentar\n";
+
+	$sql = "INSERT INTO plano_alimentar (data_criacao, titulo, usuario, cliente, cancelado) VALUES (?, ?, ?, ?, ?)"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindValue(1, $date);
+	$consulta->bindValue(2, $nome);
+	$consulta->bindValue(3, $paciente);
+	$consulta->bindValue(4, $client);
+	$consulta->bindValue(5, $cancelado);
+	$consulta->execute();
+
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function addRefeicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$plano = $data->idFoodPlan;
+	$horario = $data->hour;
+	$descricao = $data->description;
+	$cancelado = 0;
+
+	echo "Inserindo refeicao\n";
+
+	$sql = "INSERT INTO refeicao (plano_alimentar, hora, descricao, cancelado) VALUES (?, ?, ?, ?)"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindValue(1, $plano);
+	$consulta->bindValue(2, $horario);
+	$consulta->bindValue(3, $descricao);
+	$consulta->bindValue(4, $cancelado);
+	$consulta->execute();
+
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function addReceita($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+	
+	$ingredientes = $data->ingredients;
+	$modo_preparo = $data->prepareMode;
+	$imagem = $data->image;
+	$descricao = $data->description;
+	$cancelado = 0;
+
+	echo "Inserindo refeicao\n";
+
+	$sql = "INSERT INTO receita (nome, imagem, ingrediente, modo_preparo, cliente, cancelado) VALUES (?, ?, ?, ?, ?, ?)"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindValue(1, $descricao);
+	$consulta->bindValue(2, $imagem);
+	$consulta->bindValue(3, $ingredientes);
+	$consulta->bindValue(4, $modo_preparo);
+	$consulta->bindValue(5, $client);
+	$consulta->bindValue(6, $cancelado);
+	$consulta->execute();
+
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function carregarReceitas($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	echo "Carregando receitas\n";
+	
+	$cancelado = 0;
+
+	$sql = "SELECT * FROM receitas WHERE cliente = ? AND cancelado = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $client);
+	$consulta->bindParam(2, $cancelado);
+	$consulta->execute();
+
+
+	if($consulta->rowCount()){
+		$receitas[] = array("idRecipes" => $row->id, "nameRecipes" => $row->nome, "imageRecipes" => $row->imagem, "ingredientsRecipes" => $row->ingrediente, "prepareModeRecipes" => $row->modo_preparo);
+	}else{
+		$receitas[] = array("idRecipes" => null, "nameRecipes" => null, "imageRecipes" => null, "ingredientsRecipes" => null, "prepareModeRecipes" => null);
+		echo "Nenhum registro encontrado\n";
+	}
+
+	return $receitas;
+}
+
+
+function addAlimento($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$receita = $data->idRecipes;
+	$refeicao = $data->idMeal;
+	$obs = $data->observation;
+	$cancelado = 0;
+	$consumo = 0;
+
+	echo "Inserindo alimento\n";
+
+	$sql = "INSERT INTO alimento (receita, refeicao, consumo, obs, cancelado) VALUES (?, ?, ?, ?, ?)"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindValue(1, $receita);
+	$consulta->bindValue(2, $refeicao);
+	$consulta->bindValue(3, $consumo);
+	$consulta->bindValue(4, $obs);
+	$consulta->bindValue(5, $cancelado);
+	$consulta->execute();
+
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
 ?>

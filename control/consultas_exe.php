@@ -44,7 +44,9 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 				usuario.id as usuario_id,
 				usuario.img as usuario_avatar,
 				consultas.data as consultas_data,
-				IF(log.data is null, 'Sem registros', log.data) as log_data
+				IF(log.data is null, 'Sem registros', max(log.data)) as log_data,
+				50 as total_consumo,
+				100 as total_registro
 			FROM
 				(consultas , usuario) LEFT JOIN log
 			ON
@@ -64,13 +66,36 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-	   		$dados[] = array("avatar"=>$row->usuario_avatar, "userName"=>$row->usuario_nome, "userPhone"=>$row->usuario_telefone, "userId"=>$row->usuario_id, "lastAttendance"=>$row->consultas_data, "lastAccess"=>$row->log_data, "totalConsuption"=>50, "totalRegistered"=>100);
+	   		$dados[] = array("avatar"=>$row->usuario_avatar, "userName"=>$row->usuario_nome, "userPhone"=>$row->usuario_telefone, "userId"=>$row->usuario_id, "lastAttendance"=>$row->consultas_data, "lastAccess"=>$row->log_data, "totalConsuption"=>$row->total_consumo, "totalRegistered"=>$row->total_registro);
 		}
 	} else {
 		$dados[] = array("avatar"=>null, "userName"=>null, "userPhone"=>null, "userId"=>null, "lastAttendance"=>null, "lastAccess"=>null, "totalConsuption"=>null, "totalRegistered"=>null);
 		echo "Nenhum registro encontrado\n";
 	}
 	return $dados;	
+}
+
+function updateTimeLinePatient ($data, $client, $usuario){
+	require ("lib/bd.php");
+
+	$paciente = $data->patient;
+	
+	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ?";
+
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $client);
+	$consulta->bindParam(2, $paciente);
+	$consulta->execute();
+
+	if ($consulta->rowCount() > 0) {
+	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			$dados[] = array("date"=>$row->data, "medicalRecord"=>$row->prontuario);
+		}
+	} else {
+		$dados[] = array("date"=>null, "medicalRecord"=>null);
+		echo "Nenhum registro encontrado\n";
+	}
+	return $dados;
 }
 
 
