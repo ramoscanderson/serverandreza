@@ -661,15 +661,12 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "adicionando acompanhamento de paciente \n";
-			
-			$paciente = $data->patient;
-			$prontuario = $data->medicalRecords;
-			
-			$acompanhamento = carregarAcompanhamento($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+						
+			$acompanhamento = inserirConsulta($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($acompanhamento == "success"){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setAttendance",array("isSetAttendance" => true)));
 			}else{
-				echo "erro ao inserir acompanhamento \n";
+				echo "erro ao inserir acompanhamento de paciente \n";
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setAttendance",array("isSetAttendance" => false)));
 			}
 			echo "Resposta enviada\n";
@@ -724,8 +721,13 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "adicionando receita \n";
-
-			$receita = addReceita($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
+			echo "Novo arquivo de imagem criado: " . $nome . "\n";
+			$arquivo = fopen("img/recipes/" . $nome . ".jpeg", "wb");
+			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->img)));
+			fclose($arquivo);
+			echo "Arquivo escrito com os dados da receita \n";
+			$receita = addReceita("http://179.184.92.74:3397/nutriv5/img/recipes/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($receita == "success"){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setRecipes",array("isSetRecipes" => true)));
 			}else{
@@ -765,12 +767,8 @@ switch($messageObj->request->method){
 		}else{
 			echo "requisicao de carregamento de receitas \n";
 			$receitas = carregarReceitas($messageObj->request->client);
-			if($receitas == "success"){
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateRecipes",$receitas));
-			}else{
-				echo "erro ao requisitar receitas \n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateRecipes",$receitas));
-			}
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateRecipes",$receitas));
+			
 			echo "Resposta enviada\n";
 		}
 		break;
@@ -804,12 +802,23 @@ switch($messageObj->request->method){
 		}else{
 			echo "requisicao de carregamento de medidas \n";
 			$medidas = carregarMedidas($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
-			if($medidas == "success"){
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMeasures",$medidas));
-			}else{
-				echo "erro ao requisitar medidas \n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMeasures",$medidas));
-			}
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMeasures",$medidas));
+			
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
+	case "updateTimelinePatient":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updateTimelinePatient",null));
+			echo "Resposta enviada\n";
+		}else{
+			echo "requisicao de carregamento TimeLine \n";
+			$timeLine = updateTimeLinePatient($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateTimelinePatient",$timeLine));
+
 			echo "Resposta enviada\n";
 		}
 		break;

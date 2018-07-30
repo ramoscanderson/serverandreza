@@ -4,13 +4,8 @@ function inserirConsulta($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 	require ("lib/bd.php");
 	
 	$date = date("Y-m-d H-i-s");
-	echo $date . "\n";
 	$paciente = $data->patient;
-	echo $paciente . "\n";
 	$prontuario = $data->medicalRecords;
-	echo $prontuario . "\n";
-	echo $usuario . "\n";
-	echo $client . "\n";
 	
 	echo "Inserindo consulta\n";
 	
@@ -58,7 +53,7 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 			GROUP BY 
 				usuario.id
 			ORDER BY
-				consultas.data"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+				consultas.data"; 
 	
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $client);
@@ -78,9 +73,9 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 function updateTimeLinePatient ($data, $client, $usuario){
 	require ("lib/bd.php");
 
-	$paciente = $data->patient;
+	$paciente = $data->idUser;
 	
-	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ?";
+	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ? ORDER BY data";
 
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $client);
