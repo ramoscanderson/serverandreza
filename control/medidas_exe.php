@@ -3,7 +3,8 @@
 function addMedicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
-	$medida = $data->idDescription;
+	
+	$medida = $data->idMeasure;
 	$date = date("Y-m-d H:i:s");
 	$valor = str_replace(",", ".", $data->value);
 	$paciente = $data->idUser;
@@ -22,6 +23,40 @@ function addMedicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE 
 	$consulta->execute();
 
 
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+function addMedida($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+
+	$medida = $data->idMeasure;
+	$nome = $data->descriptionMeasure;
+	$cancelado = 0;
+
+	if($medida){
+		echo "Alterando medida\n";
+
+		$sql = "UPDATE medidas SET nome = ? WHERE id = ?"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindParam(1, $nome);
+		$consulta->bindParam(2, $medida);
+		$consulta->execute();
+	}else{
+		echo "Inserindo medida\n";
+
+		$sql = "INSERT INTO medidas (nome, cliente, cancelado) VALUES (?, ?, ?)"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindValue(1, $nome);
+		$consulta->bindValue(2, $client);
+		$consulta->bindValue(3, $cancelado);
+		$consulta->execute();
+	}
+	
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
@@ -83,7 +118,7 @@ function carregarMedidas($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 				if($medida_atual == $row->medidas_id){
 					$array_values[] = array("date" => $row->medicoes_data, "value" => $row->medicoes_valor);
 				}else{
-					$medidas[] = array("description" => $medida_nome, "idDescription" => $medida_atual, "values" => $array_values);
+					$medidas[] = array("description" => $medida_nome, "idMeasure" => $medida_atual, "values" => $array_values);
 					$medida_atual = $row->medidas_id;
 					$medida_nome = $row->medidas_nome;
 					$array_values = array();
@@ -91,10 +126,10 @@ function carregarMedidas($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 				}
 			}
 		}
-		$medidas[] = array("description" => $medida_nome, "idDescription" => $medida_atual, "values" => $array_values);
+		$medidas[] = array("description" => $medida_nome, "idMeasure" => $medida_atual, "values" => $array_values);
 		
 	}else{
-		$medidas[] = array("description" => null, "idDescription" => null, "values" => null);
+		$medidas[] = array("description" => null, "idMeasure" => null, "values" => null);
 		echo "Nenhum registro encontrado\n";
 	}
 

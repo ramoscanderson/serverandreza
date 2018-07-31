@@ -35,8 +35,11 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	
 	$sql = "SELECT
 				usuario.nome as usuario_nome,
+				usuario.cpf as usuario_cpf,
+				usuario.email as usuario_email,
 				usuario.telefone as usuario_telefone,
 				usuario.id as usuario_id,
+				usuario.data_nascimento as usuario_data_nascimento,
 				usuario.img as usuario_avatar,
 				consultas.data as consultas_data,
 				IF(log.data is null, 'Sem registros', max(log.data)) as log_data,
@@ -61,10 +64,10 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-	   		$dados[] = array("avatar"=>$row->usuario_avatar, "userName"=>$row->usuario_nome, "userPhone"=>$row->usuario_telefone, "userId"=>$row->usuario_id, "lastAttendance"=>$row->consultas_data, "lastAccess"=>$row->log_data, "totalConsuption"=>$row->total_consumo, "totalRegistered"=>$row->total_registro);
+	   		$dados[] = array("avatar"=>$row->usuario_avatar, "birthdayUser"=>$row->usuario_data_nascimento, "userName"=>$row->usuario_nome, "cpfUser"=>$row->usuario_cpf, "emailUser"=>$row->usuario_email, "userPhone"=>$row->usuario_telefone, "userId"=>$row->usuario_id, "lastAttendance"=>$row->consultas_data, "lastAccess"=>$row->log_data, "totalAttendanceUser"=>$row->total_consumo, "totalReturnUser"=>$row->total_registro);
 		}
 	} else {
-		$dados[] = array("avatar"=>null, "userName"=>null, "userPhone"=>null, "userId"=>null, "lastAttendance"=>null, "lastAccess"=>null, "totalConsuption"=>null, "totalRegistered"=>null);
+		$dados[] = array("avatar"=>null, "birthdayUser"=>null, "userName"=>null, "cpfUser"=>null, "emailUser"=>null, "userPhone"=>null, "userId"=>null, "lastAttendance"=>null, "lastAccess"=>null, "totalAttendanceUser"=>null, "totalReturnUser"=>null);
 		echo "Nenhum registro encontrado\n";
 	}
 	return $dados;	

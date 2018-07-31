@@ -28,7 +28,7 @@ switch($messageObj->request->method){
    
 			$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMySchedules",$agenda[1]));
-			print_r($agenda[1]);
+			//print_r($agenda[1]);
 			echo "Resposta enviada\n";
 		}
 		break;
@@ -39,7 +39,7 @@ switch($messageObj->request->method){
 		
 		$agendamentos = carregarAgenda7Days($messageObj->request->client, getJWT($messageObj->token)->id);
 	
-		print_r($agendamentos);
+		//print_r($agendamentos);
 		
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","scheduleFollowUp",$agendamentos));
 		//print_r($agenda);
@@ -362,7 +362,7 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "Solicitacao de update de plano alimentar recebida\n";
-			$plano_alimentar = carregarPlanoAlimentar($messageObj->request->client, getJWT($messageObj->token)->id);
+			$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
 			//print_r($plano_alimentar);
 			echo "Resposta enviada\n";
@@ -390,7 +390,7 @@ switch($messageObj->request->method){
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","addConsumption",array("isConsumption" => true)));
 					echo "Resposta enviada\n";
 					echo "Atualizando dispositivo\n";
-					$plano_alimentar = carregarPlanoAlimentar($messageObj->request->client, getJWT($messageObj->token)->id);
+					$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
 					echo "Resposta enviada\n";
 					break;
@@ -424,7 +424,7 @@ switch($messageObj->request->method){
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelConsumption",array("isCanceledConsumption" => true)));
 					echo "Resposta enviada\n";
 					echo "Atualizando dispositivo\n";
-					$plano_alimentar = carregarPlanoAlimentar($messageObj->request->client, getJWT($messageObj->token)->id);
+					$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
 					echo "Resposta enviada\n";
 					break;
@@ -480,7 +480,7 @@ switch($messageObj->request->method){
 		}else{
 			echo "Solicitacao de updateNews recebida\n";
 			$news = carregarNew($messageObj->request->client);
-			print_r($news);
+			//print_r($news);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateNews",$news));
 			echo "Resposta enviada\n";
 		}
@@ -495,9 +495,9 @@ switch($messageObj->request->method){
 		}else{
 			echo "Solicitacao de updateCategoriesNews recebida\n";
 			$categorias = carregarCategoriasNew($messageObj->request->client);
-			print_r($categorias);
+			//print_r($categorias);
 			$categoriasUsuario = carregarCategoriasNewUser(getJWT($messageObj->token)->id, $messageObj->request->client);
-			print_r($categoriasUsuario);
+			//print_r($categoriasUsuario);
 			$categoriasUsuarioFinal = array();
 			foreach ($categorias as $categoria){
 						$encontrado = false;
@@ -511,7 +511,7 @@ switch($messageObj->request->method){
 							$categoriasUsuarioFinal[] = array("id"=>$categoria["id"], "name"=>$categoria["name"], "selected"=>true);
 						}
 					}
-			print_r($categoriasUsuarioFinal);	
+			//print_r($categoriasUsuarioFinal);	
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateCategoriesNews",$categoriasUsuarioFinal));
 			echo "Resposta enviada\n";
 		}
@@ -550,9 +550,9 @@ switch($messageObj->request->method){
 					echo "Atualizando dispositivo\n";
 					echo "Solicitacao de updateCategoriesNews recebida\n";
 					$categorias = carregarCategoriasNew($messageObj->request->client);
-					print_r($categorias);
+					//print_r($categorias);
 					$categoriasUsuario = carregarCategoriasNewUser(getJWT($messageObj->token)->id, $messageObj->request->client);
-					print_r($categoriasUsuario);
+					//print_r($categoriasUsuario);
 					$categoriasUsuarioFinal = array();
 					foreach ($categorias as $categoria){
 						$encontrado = false;
@@ -566,7 +566,7 @@ switch($messageObj->request->method){
 							$categoriasUsuarioFinal[] = array("id"=>$categoria["id"], "name"=>$categoria["name"], "selected"=>true);
 						}
 					}
-					print_r($categoriasUsuarioFinal);	
+					//print_r($categoriasUsuarioFinal);	
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateCategoriesNews",$categoriasUsuarioFinal));
 					echo "Resposta enviada\n";
 					break;
@@ -654,6 +654,25 @@ switch($messageObj->request->method){
 		break;
 
 
+	case "updatePatients":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updatePatient",null));
+			echo "Resposta enviada\n";
+		}else{
+			echo "requisicao de pacientes \n";
+			$pacientes = carregarPacientes($messageObj->request->client);
+			if($pacientes == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updatePatient",$pacientes));
+			}else{
+				echo "erro ao requisitar pacientes \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updatePatient",$pacientes));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
 	case "setAttendance":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
@@ -684,6 +703,16 @@ switch($messageObj->request->method){
 
 			$plano = addPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($plano == "success"){
+				echo "Atualizando dispositivo do usuario\n";
+				global $conexoes;
+				foreach ($this->clients as $client) {
+					if($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]){
+						$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+						echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					}
+				}
+				echo "Dispositivo atualizado\n";				
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFoodPlan",array("isSetFoodPlan" => true)));
 			}else{
 				echo "erro ao inserir plano alimentar \n";
@@ -704,6 +733,16 @@ switch($messageObj->request->method){
 
 			$refeicao = addRefeicao($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($refeicao == "success"){
+				echo "Atualizando dispositivo do usuario\n";
+				global $conexoes;
+				foreach ($this->clients as $client) {
+					if($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]){
+						$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+						echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					}
+				}
+				echo "Dispositivo atualizado\n";
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeal",array("isSetMeal" => true)));
 			}else{
 				echo "erro ao inserir refeicao \n";
@@ -774,20 +813,40 @@ switch($messageObj->request->method){
 		break;
 
 
-	case "setMeasures":
+	case "setMeasurement":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
-			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setMeasures",array("isSetMeasures" => false)));
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setMeasurement",array("isSetMeasurement" => false)));
 			echo "Resposta enviada\n";
 		}else{
 			echo "adicionando medicao \n";
 
 			$medicao = addMedicao($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($medicao == "success"){
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeasures",array("isSetMeasures" => true)));
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeasurement",array("isSetMeasurement" => true)));
 			}else{
 				echo "erro ao inserir medicao \n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeasures",array("isSetMeasures" => false)));
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeasurement",array("isSetMeasurement" => false)));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
+	case "setMeasure":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setMeasure",array("isSetMeasure" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "adicionando medida \n";
+
+			$medicao = addMedida($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			if($medicao == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeasure",array("isSetMeasure" => true)));
+			}else{
+				echo "erro ao inserir medida \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeasure",array("isSetMeasure" => false)));
 			}
 			echo "Resposta enviada\n";
 		}
