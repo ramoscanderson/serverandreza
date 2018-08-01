@@ -21,16 +21,41 @@ switch($messageObj->request->method){
 			echo "Solicitacao de select de agenda individual recebida\n";
    
 			$agendamentos = carregarAgendaUsuario($messageObj->request->client, getJWT($messageObj->token)->id);
-   
-			$inicio_servico = "07:00:00";
-			$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES ----------- ESTES DADOS SE REPETEM NO LOOP DE CONFIRMAÇÃO DA AGENDA
-			$intervalo_padrao = "01:00:00";
+			$opcoes = carregarOpcoesAgenda($messageObj->request->client);
+			$inicio_servico = $opcoes["startService"];
+			$termino_servico = $opcoes["endService"];
+			$intervalo_padrao = $opcoes["defaultAttendance"];
    
 			$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMySchedules",$agenda[1]));
 			//print_r($agenda[1]);
 			echo "Resposta enviada\n";
 		}
+		break;
+
+
+	case "updateConfigScheduleService": 
+		echo "Solicitacao de nova configuracao de agenda administrador recebida" . "\n";
+
+		$opcoes = carregarOpcoesAgenda($messageObj->request->client);
+
+		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateConfigScheduleService",$opcoes));
+		echo "Resposta enviada\n";
+		break;
+
+
+	case "setConfigScheduleService":
+		echo "Solicitacao de atualizacao de opcoes da agenda administrador recebida\n";
+		
+		$opcoes = atualizarOpcoesAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+		
+		if($opcoes == "success"){
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setConfigScheduleService",array("isSetConfigScheduleService" => true)));
+		}else{
+			echo "erro ao atualizar opcoes da agenda \n";
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setConfigScheduleService",array("isSetConfigScheduleService" => false)));
+		}
+		echo "Resposta enviada\n";
 		break;
 
 
@@ -56,13 +81,34 @@ switch($messageObj->request->method){
 			break;
 		}
 		$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
-		
-		$inicio_servico = "07:00:00";
-		$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
-		$intervalo_padrao = "01:00:00";
+		$opcoes = carregarOpcoesAgenda($messageObj->request->client);
+		$inicio_servico = $opcoes["startService"];
+		$termino_servico = $opcoes["endService"];
+		$intervalo_padrao = $opcoes["defaultAttendance"];
 
 		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda[0]));
+		//print_r($agenda);
+		echo "Resposta enviada\n";
+		break;
+
+
+	case "updateScheduleDay":
+		echo "Solicitacao de select de agenda administrativa recebida - " . $messageObj->request->data->date . "\n";
+		if(!validar_estrutura_data($messageObj->request->data, array("date"))){
+			$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","recoverPassword",array("updateScheduleDay" => false)));
+			echo "Dados necessarios nao recebidos\n";
+			echo "Resposta enviada\n";
+			break;
+		}
+		$agendamentos = carregarAgendaAdministrativo($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+		$opcoes = carregarOpcoesAgenda($messageObj->request->client);
+		$inicio_servico = $opcoes["startService"];
+		$termino_servico = $opcoes["endService"];
+		$intervalo_padrao = $opcoes["defaultAttendance"];
+
+		$agenda = classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
+		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleDay",$agenda[0]));
 		//print_r($agenda);
 		echo "Resposta enviada\n";
 		break;
@@ -100,9 +146,10 @@ switch($messageObj->request->method){
 					$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					global $conexoes;
 					print_r($conexoes);
-					$inicio_servico = "07:00:00";
-					$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
-					$intervalo_padrao = "01:00:00";
+					$opcoes = carregarOpcoesAgenda($messageObj->request->client);
+					$inicio_servico = $opcoes["startService"];
+					$termino_servico = $opcoes["endService"];
+					$intervalo_padrao = $opcoes["defaultAttendance"];
 
 					foreach ($this->clients as $client) {
 						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
@@ -143,10 +190,10 @@ switch($messageObj->request->method){
 					echo "Atualizando demais dispositivos\n";
 					$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					global $conexoes;
-
-					$inicio_servico = "07:00:00";
-					$termino_servico = "18:00:00"; //FAZER CONSULTA PARA BUSCAR ESSES PADROES
-					$intervalo_padrao = "01:00:00";
+					$opcoes = carregarOpcoesAgenda($messageObj->request->client);
+					$inicio_servico = $opcoes["startService"];
+					$termino_servico = $opcoes["endService"];
+					$intervalo_padrao = $opcoes["defaultAttendance"];
 
 					foreach ($this->clients as $client) {
 						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
@@ -703,6 +750,8 @@ switch($messageObj->request->method){
 
 			$plano = addPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($plano == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFoodPlan",array("isSetFoodPlan" => true)));
+				echo "Resposta enviada\n";
 				echo "Atualizando dispositivo do usuario\n";
 				global $conexoes;
 				foreach ($this->clients as $client) {
@@ -712,13 +761,13 @@ switch($messageObj->request->method){
 						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
 					}
 				}
-				echo "Dispositivo atualizado\n";				
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFoodPlan",array("isSetFoodPlan" => true)));
+				echo "Dispositivo atualizado\n";
 			}else{
 				echo "erro ao inserir plano alimentar \n";
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFoodPlan",array("isSetFoodPlan" => false)));
+				echo "Resposta enviada\n";
 			}
-			echo "Resposta enviada\n";
+			
 		}
 		break;
 
@@ -733,6 +782,8 @@ switch($messageObj->request->method){
 
 			$refeicao = addRefeicao($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($refeicao == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeal",array("isSetMeal" => true)));
+				echo "Resposta enviada\n";
 				echo "Atualizando dispositivo do usuario\n";
 				global $conexoes;
 				foreach ($this->clients as $client) {
@@ -743,12 +794,11 @@ switch($messageObj->request->method){
 					}
 				}
 				echo "Dispositivo atualizado\n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeal",array("isSetMeal" => true)));
 			}else{
 				echo "erro ao inserir refeicao \n";
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeal",array("isSetMeal" => false)));
+				echo "Resposta enviada\n";
 			}
-			echo "Resposta enviada\n";
 		}
 		break;
 

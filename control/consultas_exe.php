@@ -29,22 +29,24 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	require ("lib/bd.php");
 	
 	$ativo = "0"; // 0 = não cancelado
+	$retorno_sim = 1;
+	$retorno_nao = 0;
 	
 	$news = array();
 	$categoria = array();
 	
 	$sql = "SELECT
-				usuario.nome as usuario_nome,
-				usuario.cpf as usuario_cpf,
-				usuario.email as usuario_email,
-				usuario.telefone as usuario_telefone,
-				usuario.id as usuario_id,
-				usuario.data_nascimento as usuario_data_nascimento,
-				usuario.img as usuario_avatar,
-				consultas.data as consultas_data,
-				IF(log.data is null, 'Sem registros', max(log.data)) as log_data,
-				50 as total_consumo,
-				100 as total_registro
+				usuario.nome as usuario_nome, 
+				usuario.cpf as usuario_cpf, 
+				usuario.email as usuario_email, 
+				usuario.telefone as usuario_telefone, 
+				usuario.id as usuario_id, 
+				usuario.data_nascimento as usuario_data_nascimento, 
+				usuario.img as usuario_avatar, 
+				IF(consultas.data is null, 'Sem registros', consultas.data) as consultas_data, 
+				IF(log.data is null, 'Sem registros', max(log.data)) as log_data, 
+				(select count(*) from consultas where consultas.paciente = usuario_id AND consultas.retorno = ?) as total_consumo, 
+				(select count(*) from consultas where consultas.paciente = usuario_id AND consultas.retorno = ?) as total_registro  
 			FROM
 				(consultas , usuario) LEFT JOIN log
 			ON
@@ -59,7 +61,9 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 				consultas.data"; 
 	
 	$consulta = $bd->prepare($sql);
-	$consulta->bindParam(1, $client);
+	$consulta->bindParam(1, $retorno_nao);
+	$consulta->bindParam(2, $retorno_sim);
+	$consulta->bindParam(3, $client);
 	$consulta->execute();
 	
 	if ($consulta->rowCount() > 0) {
@@ -78,7 +82,7 @@ function updateTimeLinePatient ($data, $client, $usuario){
 
 	$paciente = $data->idUser;
 	
-	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ? ORDER BY data";
+	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ? ORDER BY data DESC";
 
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $client);
