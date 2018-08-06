@@ -31,6 +31,7 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	$ativo = "0"; // 0 = não cancelado
 	$retorno_sim = 1;
 	$retorno_nao = 0;
+	$dias_decorridos = 30;
 	
 	$news = array();
 	$categoria = array();
@@ -43,27 +44,36 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 				usuario.id as usuario_id, 
 				usuario.data_nascimento as usuario_data_nascimento, 
 				usuario.img as usuario_avatar, 
-				IF(consultas.data is null, 'Sem registros', consultas.data) as consultas_data, 
+				(select IF(max(consultas.data) is null, 'Sem registros', max(consultas.data)) from consultas where usuario.id = consultas.paciente) as consultas_data, 
 				IF(log.data is null, 'Sem registros', max(log.data)) as log_data, 
 				(select count(*) from consultas where consultas.paciente = usuario_id AND consultas.retorno = ?) as total_consumo, 
-				(select count(*) from consultas where consultas.paciente = usuario_id AND consultas.retorno = ?) as total_registro  
+				(select count(*) from consultas where consultas.paciente = usuario_id AND consultas.retorno = ?) as total_registro 
 			FROM
-				(consultas , usuario) LEFT JOIN log
+				(usuario, consultas)
+			LEFT JOIN 
+				log
 			ON
-				consultas.paciente = usuario.id AND
-				consultas.paciente = log.usuario
-			WHERE
-				consultas.paciente = usuario.id AND
-				consultas.cliente = ?
+				usuario.id = log.usuario AND
+				usuario.id = consultas.paciente AND
+				log.cliente = ?
+			WHERE 
+				usuario.cliente = ? AND
+				usuario.id = consultas.paciente AND
+				consultas.cliente = ? AND
+				(DATEDIFF(CURDATE(), log.data) < ? OR DATEDIFF(CURDATE(), consultas.data) < ?)
 			GROUP BY 
 				usuario.id
-			ORDER BY
-				consultas.data"; 
+			ORDER BY 
+				usuario.nome"; 
 	
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $retorno_nao);
 	$consulta->bindParam(2, $retorno_sim);
 	$consulta->bindParam(3, $client);
+	$consulta->bindParam(4, $client);
+	$consulta->bindParam(5, $client);
+	$consulta->bindParam(6, $dias_decorridos);
+	$consulta->bindParam(7, $dias_decorridos);
 	$consulta->execute();
 	
 	if ($consulta->rowCount() > 0) {

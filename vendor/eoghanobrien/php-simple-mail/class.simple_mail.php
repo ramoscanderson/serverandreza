@@ -15,7 +15,7 @@
  * @author    Eoghan O'Brien <eoghan@eoghanobrien.com>
  * @copyright 2009 - 2017 Eoghan O'Brien
  * @license   http://github.com/eoghanobrien/php-simple-mail/LICENCE.txt MIT
- * @version   1.7
+ * @version   1.7.1
  * @link      http://github.com/eoghanobrien/php-simple-mail
  */
 
@@ -27,7 +27,7 @@
  * @author    Eoghan O'Brien <eoghan@eoghanobrien.com>
  * @copyright 2009 - 2017 Eoghan O'Brien
  * @license   http://github.com/eoghanobrien/php-simple-mail/LICENCE.txt MIT
- * @version   1.7
+ * @version   1.7.1
  * @link      http://github.com/eoghanobrien/php-simple-mail
  */
 class SimpleMail
@@ -261,6 +261,7 @@ class SimpleMail
     public function addAttachment($path, $filename = null, $data = null)
     {
         $filename = empty($filename) ? basename($path) : $filename;
+        $filename = $this->encodeUtf8($this->filterOther((string) $filename));
         $data = empty($data) ? $this->getAttachmentData($path) : $data;
         $this->_attachments[] = array(
             'path' => $path,
@@ -444,10 +445,10 @@ class SimpleMail
         $body = array();
         $body[] = "This is a multi-part message in MIME format.";
         $body[] = "--{$this->_uid}";
-        $body[] = "Content-type:text/html; charset=\"utf-8\"";
-        $body[] = "Content-Transfer-Encoding: 7bit";
+        $body[] = "Content-Type: text/html; charset=\"utf-8\"";
+        $body[] = "Content-Transfer-Encoding: quoted-printable";
         $body[] = "";
-        $body[] = $this->_message;
+        $body[] = quoted_printable_encode($this->_message);
         $body[] = "";
         $body[] = "--{$this->_uid}";
 

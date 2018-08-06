@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require 'Vendor/autoload.php';
 use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;
@@ -20,6 +20,8 @@ $server = new \Ratchet\Server\IoServer(
 	$socket, 
 	$loop
 );
+
+
 
 /*
 $server = IoServer::factory(
@@ -45,7 +47,7 @@ $loop->addPeriodicTimer(60, function () {
 	global $conexoes;
 	foreach ($connection->getClient() as $client) {
 		echo "Enviando mensagem teste para [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
-		$client->send(message_setProtocol("000","500","Test","1.0.5","testAutoMessage10Seconds",array("message"=>"Teste de envio automático")));
+		$client->send(message_setProtocol("000","500","Test","1.0.5","testAutoMessage10Seconds",array("message"=>"Teste de envio autom�tico")));
 		echo "Resposta enviada\n";
 	}
 	*/

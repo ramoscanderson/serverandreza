@@ -25,7 +25,9 @@ switch($messageObj->request->method){
 			$inicio_servico = $opcoes["startService"];
 			$termino_servico = $opcoes["endService"];
 			$intervalo_padrao = $opcoes["defaultAttendance"];
-   
+   			
+			//print_r($agendamentos);
+			
 			$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMySchedules",$agenda[1]));
 			//print_r($agenda[1]);
@@ -44,6 +46,26 @@ switch($messageObj->request->method){
 		break;
 
 
+	case "updateLocations": 
+		echo "Solicitacao listagem de locais administrador recebida" . "\n";
+
+		$opcoes = carregarLocalizacoes($messageObj->request->client);
+
+		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateLocations",$opcoes));
+		echo "Resposta enviada\n";
+		break;
+
+
+	case "updateConfigLocations": 
+		echo "Solicitacao configuracao de locais administrador recebida" . "\n";
+
+		$opcoes = carregarLocalizacoesSemana($messageObj->request->client);
+
+		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateConfigLocations",$opcoes));
+		echo "Resposta enviada\n";
+		break;
+
+
 	case "setConfigScheduleService":
 		echo "Solicitacao de atualizacao de opcoes da agenda administrador recebida\n";
 		
@@ -56,6 +78,66 @@ switch($messageObj->request->method){
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setConfigScheduleService",array("isSetConfigScheduleService" => false)));
 		}
 		echo "Resposta enviada\n";
+		break;
+
+
+	case "setConfigLocation":
+		echo "Solicitacao de atualizacao de opcoes da localizacao administrador recebida\n";
+
+		$opcoes = atualizarOpcoesLocalizacao($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+
+		if($opcoes == "success"){
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setConfigLocation",array("isSetConfigLocation" => true)));
+		}else{
+			echo "erro ao atualizar opcoes da localizacao \n";
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setConfigLocation",array("isSetConfigLocation" => false)));
+		}
+		echo "Resposta enviada\n";
+		break;
+
+
+	case "setLocation":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setLocation",array("isSetLocation" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "adicionando localizacao \n";
+			$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
+			echo "Novo arquivo de localizacao criado: " . $nome . "\n";
+			$arquivo = fopen("img/locations/" . $nome . ".jpeg", "wb");
+			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->imageLocation)));
+			fclose($arquivo);
+			echo "Arquivo escrito com os dados da receita \n";
+			$localizacao = addLocalizacao("http://179.184.92.74:3397/nutriv5/img/locations/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			if($localizacao == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setLocation",array("isSetLocation" => true)));
+			}else{
+				echo "erro ao inserir localizacao \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setLocation",array("isSetLocation" => false)));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
+	case "setConfirmedSchedule":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setConfirmedSchedule",array("isSetConfirmedSchedule" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "confirmando agedamento \n";
+			
+			$confirmacao = confirmarAgendamento($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			if($confirmacao == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setConfirmedSchedule",array("isSetConfirmedSchedule" => true)));
+			}else{
+				echo "erro ao confirmar agendamento \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setConfirmedSchedule",array("isSetConfirmedSchedule" => false)));
+			}
+			echo "Resposta enviada\n";
+		}
 		break;
 
 
@@ -81,6 +163,7 @@ switch($messageObj->request->method){
 			break;
 		}
 		$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+		//print_r($agendamentos);
 		$opcoes = carregarOpcoesAgenda($messageObj->request->client);
 		$inicio_servico = $opcoes["startService"];
 		$termino_servico = $opcoes["endService"];
@@ -102,6 +185,7 @@ switch($messageObj->request->method){
 			break;
 		}
 		$agendamentos = carregarAgendaAdministrativo($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+		
 		$opcoes = carregarOpcoesAgenda($messageObj->request->client);
 		$inicio_servico = $opcoes["startService"];
 		$termino_servico = $opcoes["endService"];
@@ -143,7 +227,11 @@ switch($messageObj->request->method){
 					inserirLog("setSchedule - Usuário realizou um agendamento de consulta: " . $messageObj->request->data->date . " das " . $messageObj->request->data->hour . ".", $messageObj->request->client, getJWT($messageObj->token)->id);
 					echo "Resposta enviada\n";
 					echo "Atualizando demais dispositivos\n";
+					//$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+					
+					$agendamentosAdm = carregarAgendaAdministrativo($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+										
 					global $conexoes;
 					print_r($conexoes);
 					$opcoes = carregarOpcoesAgenda($messageObj->request->client);
@@ -152,9 +240,19 @@ switch($messageObj->request->method){
 					$intervalo_padrao = $opcoes["defaultAttendance"];
 
 					foreach ($this->clients as $client) {
-						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
-						echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
-						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",(array)$agenda[0]));
+						if($conexoes["$client->resourceId"]["userId"] != "-1"){	
+							//$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+							
+							$agenda;
+							if($conexoes["$client->resourceId"]["admin"]){
+								$agenda = classificarAgendaAdministrativo($agendamentosAdm, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+							}else{
+								$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+							}
+							
+							echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+							$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",(array)$agenda[0]));
+						}
 					}
 					echo "Dispositivos atualizados\n";
 					break;
@@ -188,7 +286,11 @@ switch($messageObj->request->method){
 					inserirLog("cancelSchedule - Usuário realizou um cancelamento de consulta: " . $messageObj->request->data->id . ", motivo " . $messageObj->request->data->reasonForCancellation->id . " - " . $messageObj->request->data->reasonForCancellation->description . ".", $messageObj->request->client, getJWT($messageObj->token)->id);
 					echo "Resposta enviada\n";
 					echo "Atualizando demais dispositivos\n";
+					//$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+					
+					$agendamentosAdm = carregarAgendaAdministrativo($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 					$agendamentos = carregarAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+										
 					global $conexoes;
 					$opcoes = carregarOpcoesAgenda($messageObj->request->client);
 					$inicio_servico = $opcoes["startService"];
@@ -196,9 +298,19 @@ switch($messageObj->request->method){
 					$intervalo_padrao = $opcoes["defaultAttendance"];
 
 					foreach ($this->clients as $client) {
-						$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
-						echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
-						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",(array)$agenda[0]));
+						if($conexoes["$client->resourceId"]["userId"] != "-1"){		
+							//$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+							
+							$agenda;
+							if($conexoes["$client->resourceId"]["admin"]){
+								$agenda = classificarAgendaAdministrativo($agendamentosAdm, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+							}else{
+								$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+							}
+							
+							echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+							$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",(array)$agenda[0]));
+						}
 					}
 					echo "Dispositivos atualizados\n";
 					break;
@@ -283,7 +395,11 @@ switch($messageObj->request->method){
 				echo "Resposta enviada\n";
 				break;
 			default:
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setUser",array("isUser" => true, "token" => setJWT($user))));
+				if(isVisitante($messageObj->token)){
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setUser",array("isUser" => true, "token" => setJWT($user, false, false))));
+				}else{
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setUser",array("isUser" => true, "id" => $user)));
+				}
 				echo "Resposta enviada\n";				
 				break;
 		}
@@ -307,9 +423,14 @@ switch($messageObj->request->method){
 			$user = consultaUsuario(getJWT($messageObj->token), $messageObj->request->client);
 		}
 		if(is_array($user)){
-			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","signIn",array("isSignIn" => true, "user" => (array)$user, "token" => setJWT($user['id']))));
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","signIn",array("isSignIn" => true, "user" => (array)$user, "token" => setJWT($user['id'], (str_replace("x","",$messageObj->request->version) != $messageObj->request->version), (str_replace("dev","",$messageObj->request->version) != $messageObj->request->version)))));
 			global $conexoes;
-			$conexoes["{$from->resourceId}"] = array("userId"=>$user['id'], "userEmail"=>$user['email'], "userName"=>$user['name']);
+			$conexoes["{$from->resourceId}"] = array("userId"=>$user['id'], 
+													"userEmail"=>$user['email'], 
+													"userName"=>$user['name'],
+													"admin"=>(str_replace("x","",$messageObj->request->version) != $messageObj->request->version),
+													"developer"=>(str_replace("dev","",$messageObj->request->version) != $messageObj->request->version));
+			print_r($conexoes);
 			inserirLog("signIn - Usuário " . $user['name'] . " realizou login.", $messageObj->request->client, $user['id']);
 			echo "Resposta enviada\n";
 		}else{
@@ -390,7 +511,7 @@ switch($messageObj->request->method){
 		switch($novaSenha){
 			case "success":
 				echo "NEWID: " . $conexoes["{$from->resourceId}"]["newUserId"] . "\n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","recoverPassword",array("isRecovered" => true, "token" => setJWT($conexoes["{$from->resourceId}"]["newUserId"]))));
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","recoverPassword",array("isRecovered" => true, "token" => setJWT($conexoes["{$from->resourceId}"]["newUserId"], false, false))));
 				echo "Resposta enviada\n";				
 				break;
 			case "failed":
@@ -504,7 +625,7 @@ switch($messageObj->request->method){
 				case "success":
 					echo "Atualizando dispositivo\n";
 					$user = consultaUsuario(getJWT($messageObj->token), $messageObj->request->client);
-					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateUserData",array("isUpdateUserData" => true, "user" => (array)$user, "token" => setJWT($user['id']))));
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateUserData",array("isUpdateUserData" => true, "user" => (array)$user, "token" => setJWT($user['id'], false, false))));
 					global $conexoes;
 					$conexoes["{$from->resourceId}"] = array("userId"=>$user['id'], "userEmail"=>$user['email'], "userName"=>$user['name']);
 					echo "Resposta enviada\n";
@@ -690,12 +811,8 @@ switch($messageObj->request->method){
 		}else{
 			echo "requisicao de acompanhamento de pacientes \n";
 			$acompanhamento = carregarAcompanhamento($messageObj->request->client);
-			if($acompanhamento == "success"){
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","patientFollowUp",$acompanhamento));
-			}else{
-				echo "erro ao requisitar acompanhamento \n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","patientFollowUp",$acompanhamento));
-			}
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","patientFollowUp",$acompanhamento));
+			
 			echo "Resposta enviada\n";
 		}
 		break;
@@ -709,12 +826,8 @@ switch($messageObj->request->method){
 		}else{
 			echo "requisicao de pacientes \n";
 			$pacientes = carregarPacientes($messageObj->request->client);
-			if($pacientes == "success"){
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updatePatient",$pacientes));
-			}else{
-				echo "erro ao requisitar pacientes \n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updatePatient",$pacientes));
-			}
+			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updatePatient",$pacientes));
+			
 			echo "Resposta enviada\n";
 		}
 		break;
@@ -960,6 +1073,9 @@ switch($messageObj->request->method){
 		
 		
 	case "jwt":
+		echo $from->socket_getsockname();
+		
+		/*
 		echo "Solicitacao de TESTE recebida\n";
 		$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
 		echo "NOME " . $nome . "\n";
@@ -972,7 +1088,7 @@ switch($messageObj->request->method){
 		echo "ARQUIVO: " . base64_decode($messageObj->request->data->img) . " \n";
 		//echo "ARQUIVO: " . base64_decode($img_b64) . " \n";
 		echo "ARQUIVO CRIADO \n";
-		
+		*/
 		
 		break;
 

@@ -1,7 +1,7 @@
-<?php
+﻿<?php
 use Firebase\JWT\JWT;
 
-function setJWT($user){
+function setJWT($user, $admin, $dev){
 	$privateKey = <<<EOD
 -----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQC8kGa1pSjbSYZVebtTRBLxBz5H4i2p/llLCrEeQhta5kaQu/Rn
@@ -32,8 +32,8 @@ EOD;
 	$token = array(
 		"id" => $user,
 		"date_create" => date('Y-m-d'),
-		"admin" => false,
-		"developer" => false
+		"admin" => $admin,
+		"developer" => $dev
 	);
    
 	$jwt = JWT::encode($token, $privateKey, 'RS256');

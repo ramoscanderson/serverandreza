@@ -1,8 +1,15 @@
-<?php
+ï»¿<?php
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+
+//PUSH NOTIFICATION
+use sngrl\PhpFirebaseCloudMessaging\Client;
+use sngrl\PhpFirebaseCloudMessaging\Message;
+use sngrl\PhpFirebaseCloudMessaging\Recipient\Device;
+use sngrl\PhpFirebaseCloudMessaging\Notification;
+//PUSH NOTIFICATION
 
 require("model/class.phpmailer.php");
 require("model/class.smtp.php");
@@ -34,22 +41,22 @@ class Connection implements MessageComponentInterface {
 	}
 
 	public function onOpen(ConnectionInterface $conn) {
-		//caminho a partir da raiz pois está classe está sendo requerida no connection_srv
+		//caminho a partir da raiz pois estÃ¡ classe estÃ¡ sendo requerida no connection_srv
 		require ("control/onOpen_connection_exe.php");
 	}
 
 	public function onMessage(ConnectionInterface $from, $msg) {
-		//caminho a partir da raiz pois está classe está sendo requerida no connection_srv
+		//caminho a partir da raiz pois estÃ¡ classe estÃ¡ sendo requerida no connection_srv
 		require ("control/onMessage_connection_exe.php");
 	}
 
 	public function onClose(ConnectionInterface $conn) {
-		//caminho a partir da raiz pois está classe está sendo requerida no connection_srv
+		//caminho a partir da raiz pois estÃ¡ classe estÃ¡ sendo requerida no connection_srv
 		require ("control/onClose_connection_exe.php");
 	}
 
 	public function onError(ConnectionInterface $conn, \Exception $e) {
-		//caminho a partir da raiz pois está classe está sendo requerida no connection_srv
+		//caminho a partir da raiz pois estÃ¡ classe estÃ¡ sendo requerida no connection_srv
 		require ("control/onError_connection_exe.php");		
 	}
 }

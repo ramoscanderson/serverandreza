@@ -28,21 +28,44 @@ function cancelarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 function inserirAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
+	if(isset($data->idUser)){
+		$usuario = $data->idUser;
+	}
+	
 	$date = $data->date;
 	$hour = $data->hour;
+	$retorno = "0";
+	
+	if(isset($data->isReturn)){
+		$retorno = $data->isReturn;
+	}
+	
+	$duracao = false;
+	
+	if(isset($data->durationSchedule)){
+		$duracao = $data->durationSchedule;
+	}
+	
 	$partes = explode(" às ", $hour);
 	$hora_inicio = str_replace("h", ":" ,$partes[0]) . ":00";
 	$hora_fim = str_replace("h", ":" ,$partes[1]) . ":00";
 	
+	if($duracao){
+		$h_inicial = explode(":", $hora_inicio);
+		$h_final = explode(":", $duracao);
+		$hora_fim = date("H:i:s", mktime(($h_inicial[0] + $h_final[0]),($h_inicial[1] + $h_final[1]),00,00,00,00));
+	}	
+	
 	echo "Inserindo registro: $date - $hora_inicio - $hora_fim - $usuario\n";
 	
-	$sql = "INSERT INTO agenda_consulta (data, hora_inicio, hora_fim, usuario, cliente) VALUES (?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "INSERT INTO agenda_consulta (data, hora_inicio, hora_fim, retorno, usuario, cliente) VALUES (?, ?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
 	$consulta->bindValue(1, $date);
 	$consulta->bindValue(2, $hora_inicio);
 	$consulta->bindValue(3, $hora_fim);
-	$consulta->bindValue(4, $usuario);
-	$consulta->bindValue(5, $client);
+	$consulta->bindValue(4, $retorno);
+	$consulta->bindValue(5, $usuario);
+	$consulta->bindValue(6, $client);
 	$consulta->execute();
 	
 	if($consulta->rowCount()){
@@ -149,7 +172,7 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-	   		$agendamentos[] = array("id" => $row->agenda_id, "data" => $row->agenda_data, "hora_inicio"=>$row->agenda_hora_inicio, "hora_fim"=>$row->agenda_hora_fim, "usuario"=>$row->agenda_usuario, "titleAdress"=>$row->localizacao_titulo_endereco, "subTitleAdress"=>$row->localizacao_subtitulo_endereco, "destination"=>$row->localizacao_coordenada, "imgDestination"=>$row->localizacao_img, "indisponivel"=>$row->localizacao_semana_indisponivel);
+	   		$agendamentos[] = array("id" => $row->agenda_id, "data" => $row->agenda_data, "hora_inicio"=>$row->agenda_hora_inicio, "hora_fim"=>$row->agenda_hora_fim, "usuario"=>$row->agenda_usuario, "confirmado"=>$row->agenda_confirmado, "titleAdress"=>$row->localizacao_titulo_endereco, "subTitleAdress"=>$row->localizacao_subtitulo_endereco, "destination"=>$row->localizacao_coordenada, "imgDestination"=>$row->localizacao_img, "indisponivel"=>$row->localizacao_semana_indisponivel);
 			//$agendamentos[] = array("id" => $row->id, "data" => $row->data, "hora_inicio"=>$row->hora_inicio, "hora_fim"=>$row->hora_fim, "usuario"=>$row->usuario);
 			echo $row->agenda_id . " - " . $row->agenda_data . " - " . $row->agenda_hora_inicio . " - " . $row->agenda_hora_fim . " - " . $row->agenda_usuario . "\n";
 			//echo $row->id . " - " . $row->data . " - " . $row->hora_inicio . " - " . $row->hora_fim . " - " . $row->usuario . "\n";
@@ -245,6 +268,7 @@ function carregarAgendaAdministrativo($data, $client, $usuario){ //FAZER CÓDIGO
 			"hora_inicio"=>$row->agenda_hora_inicio, 
 			"hora_fim"=>$row->agenda_hora_fim, 
 			"usuario"=>$row->agenda_usuario, 
+			"confirmado"=>$row->agenda_confirmado,
 			"titleAdress"=>$row->localizacao_titulo_endereco, 
 			"subTitleAdress"=>$row->localizacao_subtitulo_endereco, 
 			"destination"=>$row->localizacao_coordenada, 
@@ -322,7 +346,7 @@ function carregarAgenda7Days($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE S
 				agenda_consulta.cliente = ? and
 				localizacao.cliente = ? and
 				localizacao_semana.cliente = ? 
-			ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES       if(500<1000, "yes", "no")
+			ORDER BY agenda_consulta.data, agenda_consulta.hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES       if(500<1000, "yes", "no")
 
 	$consulta = $bd->prepare($sql);
 	/*
@@ -345,7 +369,17 @@ function carregarAgenda7Days($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE S
 
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-			$agendamentos[] = array("id" => $row->agenda_id, "data" => $row->agenda_data, "horario"=>substr($row->agenda_hora_inicio, 0, -3) . " às " . substr($row->agenda_hora_fim, 0, -3), "usuario_id"=>$row->agenda_usuario, "usuario_nome"=>$row->usuario_nome, "usuario_telefone"=>$row->usuario_telefone, "titleAdress"=>$row->localizacao_titulo_endereco, "subTitleAdress"=>$row->localizacao_subtitulo_endereco, "destination"=>$row->localizacao_coordenada, "imgDestination"=>$row->localizacao_img);
+			$agendamentos[] = array("id" => $row->agenda_id, 
+			"data" => $row->agenda_data, 
+			"horario"=>substr($row->agenda_hora_inicio, 0, -3) . " às " . substr($row->agenda_hora_fim, 0, -3), 
+			"usuario_id"=>$row->agenda_usuario, 
+			"confirmado"=>$row->agenda_confirmado,
+			"usuario_nome"=>$row->usuario_nome, 
+			"usuario_telefone"=>$row->usuario_telefone, 
+			"titleAdress"=>$row->localizacao_titulo_endereco, 
+			"subTitleAdress"=>$row->localizacao_subtitulo_endereco, 
+			"destination"=>$row->localizacao_coordenada, 
+			"imgDestination"=>$row->localizacao_img);
 			//$agendamentos[] = array("id" => $row->id, "data" => $row->data, "hora_inicio"=>$row->hora_inicio, "hora_fim"=>$row->hora_fim, "usuario"=>$row->usuario);
 			echo $row->agenda_id . " - " . $row->agenda_data . " - " . $row->agenda_hora_inicio . " - " . $row->agenda_hora_fim . " - " . $row->agenda_usuario . "\n";
 			//echo $row->id . " - " . $row->data . " - " . $row->hora_inicio . " - " . $row->hora_fim . " - " . $row->usuario . "\n";
@@ -416,7 +450,7 @@ function carregarAgendaUsuario($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-			$agendamentos[] = array("id" => $row->agenda_id, "data" => $row->agenda_data, "hora_inicio"=>$row->agenda_hora_inicio, "hora_fim"=>$row->agenda_hora_fim, "usuario"=>$row->agenda_usuario, "titleAdress"=>$row->localizacao_titulo_endereco, "subTitleAdress"=>$row->localizacao_subtitulo_endereco, "destination"=>$row->localizacao_coordenada, "imgDestination"=>$row->localizacao_img, "indisponivel"=>$row->localizacao_semana_indisponivel);
+			$agendamentos[] = array("id" => $row->agenda_id, "data" => $row->agenda_data, "hora_inicio"=>$row->agenda_hora_inicio, "hora_fim"=>$row->agenda_hora_fim, "usuario"=>$row->agenda_usuario, "confirmado"=>$row->agenda_confirmado, "titleAdress"=>$row->localizacao_titulo_endereco, "subTitleAdress"=>$row->localizacao_subtitulo_endereco, "destination"=>$row->localizacao_coordenada, "imgDestination"=>$row->localizacao_img, "indisponivel"=>$row->localizacao_semana_indisponivel);
 			echo $row->agenda_id . " - " . $row->agenda_data . " - " . $row->agenda_hora_inicio . " - " . $row->agenda_hora_fim . " - " . $row->agenda_usuario . "\n";
 	   }
 	} else {
@@ -508,6 +542,8 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 	$local = carregarLocalizacaoSemana($date, $cliente);
 	$hora_atual = $inicio_servico;
 	$adicional = "00:00:00";
+	$index = 0;
+	$array_hora_final_aux[$agendamentos[$index]["hora_inicio"]] = $agendamentos[$index]["hora_inicio"];
 	while((strtotime($hora_atual) != strtotime($termino_servico) || strtotime($hora_atual) < strtotime($termino_servico))){// && $adicional == "00:00:00"
 		if($adicional == "00:00:00"){
 			if(is_int(array_search($hora_atual, array_column($agendamentos, "hora_inicio")))){
@@ -517,6 +553,7 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 					"date" => $agendamentos[$index]["data"],
 					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " às " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
 					"available" => false,
+					"confirmedSchedule" => ($agendamentos[$index]["confirmado"] ? true : false),
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
 					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horário" : "Indisponível"),
 					"titleAdress" => (is_null($agendamentos[$index]["titleAdress"]) ? (isset($local["titleAdress"]) ? $local["titleAdress"] : null) : $agendamentos[$index]["titleAdress"]),
@@ -524,6 +561,7 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 					"destination" => (is_null($agendamentos[$index]["destination"]) ? (isset($local["destination"]) ? $local["destination"] : null) : $agendamentos[$index]["destination"]),
 					"imgDestination" => (is_null($agendamentos[$index]["imgDestination"]) ? (isset($local["imgDestination"]) ? $local["imgDestination"] : null) : $agendamentos[$index]["imgDestination"])
 				);
+				//echo str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " às " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)) . "\n";
 				$usuarios[] = $agendamentos[$index]["usuario"];
 				
 				$partes_hora_fim = explode(":", $agendamentos[$index]["hora_fim"]);
@@ -541,11 +579,24 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 				$partes = explode(":", $intervalo_padrao);
 				$hora_final = strtotime($hora_atual) + $partes[0]*3600 + $partes[1]*60 + $partes[2];
 				$hora_final = strftime('%H:%M:%S', $hora_final);
+				if(isset($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]])){
+					if($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]]){
+						if(strtotime($hora_atual) < strtotime($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]])){
+							if(strtotime($hora_final) > strtotime($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]])){
+								$hora_final = $array_hora_final_aux[$agendamentos[$index]["hora_inicio"]];
+								$array_hora_final_aux[$agendamentos[$index]["hora_inicio"]] = false;
+							}
+						}
+					}
+				}else{
+					$array_hora_final_aux[$agendamentos[$index]["hora_inicio"]] = $agendamentos[$index]["hora_inicio"];;
+				}
 				$agenda[] = array(
 					"id" => null,
 					"date" => $date,
 					"time" => str_replace(":", "h", substr($hora_atual, 0, 5)) . " às " . str_replace(":", "h", substr($hora_final, 0, 5)),
 					"available" => true,
+					"confirmedSchedule" => false,
 					"mySchedule" => false,
 					"strAvailable" => "Horário disponível",
 					"titleAdress" => (is_null($agendamentos[$index]["titleAdress"]) ? (isset($local["titleAdress"]) ? $local["titleAdress"] : null) : $agendamentos[$index]["titleAdress"]),
@@ -553,6 +604,7 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 					"destination" => (is_null($agendamentos[$index]["destination"]) ? (isset($local["destination"]) ? $local["destination"] : null) : $agendamentos[$index]["destination"]),
 					"imgDestination" => (is_null($agendamentos[$index]["imgDestination"]) ? (isset($local["imgDestination"]) ? $local["imgDestination"] : null) : $agendamentos[$index]["imgDestination"])
 				);
+				//echo str_replace(":", "h", substr($hora_atual, 0, 5)) . " às " . str_replace(":", "h", substr($hora_final, 0, 5)) . "\n";
 				$usuarios[] = "0";
 				
 				//echo $hora_atual . "\n";
@@ -570,6 +622,7 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 					"date" => $agendamentos[$index]["data"],
 					"time" => str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " às " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)),
 					"available" => false,
+					"confirmedSchedule" => ($agendamentos[$index]["confirmado"] ? true : false),
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
 					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horário" : "Indisponível"),
 					"titleAdress" => (is_null($agendamentos[$index]["titleAdress"]) ? (isset($local["titleAdress"]) ? $local["titleAdress"] : null) : $agendamentos[$index]["titleAdress"]),
@@ -577,6 +630,7 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 					"destination" => (is_null($agendamentos[$index]["destination"]) ? (isset($local["destination"]) ? $local["destination"] : null) : $agendamentos[$index]["destination"]),
 					"imgDestination" => (is_null($agendamentos[$index]["imgDestination"]) ? (isset($local["imgDestination"]) ? $local["imgDestination"] : null) : $agendamentos[$index]["imgDestination"])
 				);
+				//echo str_replace(":", "h", substr($agendamentos[$index]["hora_inicio"], 0, 5)) . " às " . str_replace(":", "h", substr($agendamentos[$index]["hora_fim"], 0, 5)) . "\n";
 				$usuarios[] = $agendamentos[$index]["usuario"];
 				
 				$partes_hora_fim = explode(":", $agendamentos[$index]["hora_fim"]);
@@ -622,6 +676,8 @@ function classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termin
 	$local = carregarLocalizacaoSemana($date, $cliente);
 	$hora_atual = $inicio_servico;
 	$adicional = "00:00:00";
+	$index = 0;
+	$array_hora_final_aux[$agendamentos[$index]["hora_inicio"]] = $agendamentos[$index]["hora_inicio"];
 	while((strtotime($hora_atual) != strtotime($termino_servico) || strtotime($hora_atual) < strtotime($termino_servico))){// && $adicional == "00:00:00"
 		if($adicional == "00:00:00"){
 			if(is_int(array_search($hora_atual, array_column($agendamentos, "hora_inicio")))){
@@ -638,6 +694,7 @@ function classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termin
 					"emailUser" => $agendamentos[$index]["emailUser"],
 					"birthdayUser" => $agendamentos[$index]["birthdayUser"],
 					"imageUser" => $agendamentos[$index]["imageUser"],
+					"confirmedSchedule" => ($agendamentos[$index]["confirmado"] ? true : false),
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
 					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horário" : "Indisponível"),
 					"titleAdress" => (is_null($agendamentos[$index]["titleAdress"]) ? (isset($local["titleAdress"]) ? $local["titleAdress"] : null) : $agendamentos[$index]["titleAdress"]),
@@ -662,6 +719,18 @@ function classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termin
 				$partes = explode(":", $intervalo_padrao);
 				$hora_final = strtotime($hora_atual) + $partes[0]*3600 + $partes[1]*60 + $partes[2];
 				$hora_final = strftime('%H:%M:%S', $hora_final);
+				if(isset($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]])){
+					if($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]]){
+						if(strtotime($hora_atual) < strtotime($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]])){
+							if(strtotime($hora_final) > strtotime($array_hora_final_aux[$agendamentos[$index]["hora_inicio"]])){
+								$hora_final = $array_hora_final_aux[$agendamentos[$index]["hora_inicio"]];
+								$array_hora_final_aux[$agendamentos[$index]["hora_inicio"]] = false;
+							}
+						}
+					}
+				}else{
+					$array_hora_final_aux[$agendamentos[$index]["hora_inicio"]] = $agendamentos[$index]["hora_inicio"];;
+				}
 				$agenda[] = array(
 					"id" => null,
 					"date" => $date,
@@ -672,6 +741,7 @@ function classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termin
 					"cpfUser" => null,
 					"phoneUser" => null,
 					"emailUser" => null,
+					"confirmedSchedule" => false,
 					"birthdayUser" => null,
 					"imageUser" => null,
 					"mySchedule" => false,
@@ -705,6 +775,7 @@ function classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termin
 					"emailUser" => $agendamentos[$index]["emailUser"],
 					"birthdayUser" => $agendamentos[$index]["birthdayUser"],
 					"imageUser" => $agendamentos[$index]["imageUser"],
+					"confirmedSchedule" => ($agendamentos[$index]["confirmado"] ? true : false),
 					"mySchedule" => ($usuario == $agendamentos[$index]["usuario"] ? true : false),
 					"strAvailable" => ($usuario == $agendamentos[$index]["usuario"] ? "Meu horário" : "Indisponível"),
 					"titleAdress" => (is_null($agendamentos[$index]["titleAdress"]) ? (isset($local["titleAdress"]) ? $local["titleAdress"] : null) : $agendamentos[$index]["titleAdress"]),
@@ -825,6 +896,157 @@ function atualizarOpcoesAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VE
 	$consulta->bindParam(4, $client);
 	$consulta->execute();
 
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+function carregarLocalizacoes($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	echo "Carregando localizacoes\n";
+
+	echo $client. "\n";
+	$cancelado = 0;
+
+	$sql = "SELECT id, titulo_endereco, subtitulo_endereco, coordenada, img, cliente FROM localizacao WHERE cliente = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $client);
+	$consulta->execute();
+
+	$localizacoes = array();
+	if($consulta->rowCount()){
+		while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			$localizacoes[] = array("idLocation" => $row->id, "titleAdressLocation" => $row->titulo_endereco, "subTitleAdressLocation" => $row->subtitulo_endereco, "coordinateLocation" => $row->coordenada, "imageLocation" => $row->img);
+		}
+	}else{
+		$localizacoes[] = array("idLocation" => null, "titleAdressLocation" => null, "subTitleAdressLocation" => null, "coordinateLocation" => null, "imageLocation" => null);
+		echo "Nenhum registro encontrado\n";
+	}
+
+	return $localizacoes;
+}
+
+function carregarLocalizacoesSemana($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	echo "Carregando localizacoes\n";
+
+	echo $client. "\n";
+	$cancelado = 0;
+
+	$sql = "SELECT 
+				localizacao.id as id, 
+				localizacao.titulo_endereco as titulo, 
+				localizacao.subtitulo_endereco as subtitulo, 
+				localizacao.coordenada as coordenada, 
+				localizacao.img as img, 
+				localizacao.cliente as cliente,
+				localizacao_semana.dia_semana as dia_semana
+			FROM 
+				localizacao, localizacao_semana 
+			WHERE 
+				localizacao.cliente = ? AND
+				localizacao_semana.cliente = ? AND
+				localizacao.id = localizacao_semana.localizacao"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $client);
+	$consulta->bindParam(2, $client);
+	$consulta->execute();
+
+	$localizacoes = array();
+	if($consulta->rowCount()){
+		while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			$localizacoes[] = array("weekLocation" => $row->dia_semana, "idLocation" => $row->id);
+		}
+	}else{
+		$localizacoes[] = array("weekLocation" => null, "idLocalization" => null);
+		echo "Nenhum registro encontrado\n";
+	}
+
+	return $localizacoes;
+}
+
+function atualizarOpcoesLocalizacao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$localizacao = $data->idLocation;
+	$dia_semana = $data->weekLocation;
+
+	echo "Atualizando novo padrao de localizacao\n";
+
+	$sql = "UPDATE localizacao_semana SET localizacao = ? WHERE dia_semana = ? AND cliente = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $localizacao);
+	$consulta->bindParam(2, $dia_semana);
+	$consulta->bindParam(3, $client);
+	$consulta->execute();
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+function addLocalizacao($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+
+	$localizacao = $data->idLocation;
+	$titulo_endereco = $data->titleAdressLocation;
+	$subtitulo_endereco = $data->subTitleAdressLocation;
+	$coordenada = $data->coordinateLocation;
+		
+	$cancelado = 0;
+
+	if($localizacao){
+		echo "Alterando localizacao\n";
+		
+		$sql = "UPDATE localizacao SET titulo_endereco = ?, subtitulo_endereco = ?, coordenada = ?, img = ? WHERE id = ?"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindParam(1, $titulo_endereco);
+		$consulta->bindParam(2, $subtitulo_endereco);
+		$consulta->bindParam(3, $coordenada);
+		$consulta->bindParam(4, $img);
+		$consulta->bindParam(5, $localizacao);
+		$consulta->execute();
+	}else{
+		echo "Inserindo localizacao\n";
+
+		$sql = "INSERT INTO localizacao (titulo_endereco, subtitulo_endereco, coordenada, img, cliente) VALUES (?, ?, ?, ?, ?)"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindValue(1, $titulo_endereco);
+		$consulta->bindParam(2, $subtitulo_endereco);
+		$consulta->bindValue(3, $coordenada);
+		$consulta->bindValue(4, $img);
+		$consulta->bindValue(5, $client);
+		$consulta->execute();
+	}
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+function confirmarAgendamento($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$agendamento = $data->id;
+	$confirmado = 1;
+	
+	echo "Confirmando agendamento: " . $agendamento . "\n";
+
+	$sql = "UPDATE agenda_consulta SET confirmado = ? WHERE id = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $confirmado);
+	$consulta->bindParam(2, $agendamento);
+	$consulta->execute();
+	
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{

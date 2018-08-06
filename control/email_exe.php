@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 function envia_email($nome, $destinatario, $assunto, $mensagem){
 

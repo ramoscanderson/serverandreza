@@ -90,7 +90,7 @@ function carregarNew($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM 
 				news.cliente = ? and
 				usuario.cliente = ? 
 			ORDER BY 
-				news.data_postagem, 
+				news.data_postagem DESC, 
 				categorias.id"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	
 	$consulta = $bd->prepare($sql);
@@ -119,6 +119,7 @@ function carregarNew($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM 
 				$dados = array("id" => $row->new_id, "date" => $row->new_data_postagem, "imgAvatar"=>$row->new_avatar, "content"=>$row->new_conteudo, "userName"=>$row->usuario_nome, "categories"=>$categoria);
 			}
 		}
+		$news[] = $dados;
 	} else {
 		$news[] = array("id"=>null, "date"=>null, "imgAvatar"=>null, "content"=>null, "userName"=>null, "categories"=>null);
 		echo "Nenhum registro encontrado\n";
