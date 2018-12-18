@@ -286,7 +286,7 @@ function carregarAgendaAdministrativo($data, $client, $usuario){ //FAZER CÓDIGO
 	   }
 	} else {
 		$agendamentos[] = array("id" => $row->agenda_id, 
-			"data" => null, "hora_inicio"=>null, "hora_fim"=>null, "usuario"=>"0", "titleAdress"=>null, "subTitleAdress"=>null, "destination"=>null, "imgDestination"=>null, "idUser"=>null, "nameUser"=>null, "cpfUser"=>null, "emailUser"=>null, "phoneUser"=>null, "birthdayUser"=>null, "imageUser"=>null);;
+			"data" => $date, "hora_inicio"=>null, "hora_fim"=>null, "usuario"=>"0", "titleAdress"=>null, "subTitleAdress"=>null, "destination"=>null, "imgDestination"=>null, "idUser"=>null, "nameUser"=>null, "cpfUser"=>null, "emailUser"=>null, "phoneUser"=>null, "birthdayUser"=>null, "imageUser"=>null);;
 		echo "Nenhum registro encontrado\n";
 	}
 

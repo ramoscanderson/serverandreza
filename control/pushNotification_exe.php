@@ -1,17 +1,26 @@
 ﻿<?php
 
+//PUSH NOTIFICATION
+use sngrl\PhpFirebaseCloudMessaging\Client;
+use sngrl\PhpFirebaseCloudMessaging\Message;
+use sngrl\PhpFirebaseCloudMessaging\Recipient\Device;
+use sngrl\PhpFirebaseCloudMessaging\Recipient\Topic;
+use sngrl\PhpFirebaseCloudMessaging\Notification;
+//PUSH NOTIFICATION
+
 function gerar_notificacao(){
-	$server_key = '_YOUR_SERVER_KEY_';
+	$server_key = 'AAAAGuMVir0:APA91bEtLYBfQKcuIn38W43Kj6LNbpJWeQJ61DO8VJ4IYYduiJFvo6dD55U9g83YuqMj0Qrkv1zNSVxxdPzTWeEIMzbEcf2G8TJKRsy_fOnEedNR57TshjhMx9PFkM62RTilin-pxkaVRgbrSfm3aiZKpU_PLyWOvA';
 	$client = new Client();
 	$client->setApiKey($server_key);
 	$client->injectGuzzleHttpClient(new \GuzzleHttp\Client());
    
 	$message = new Message();
 	$message->setPriority('high');
-	$message->addRecipient(new Device('_YOUR_DEVICE_TOKEN_'));
+	$message->addRecipient(new Device('dPxbEjyTIVM:APA91bEimZalybGz_S6Wd5L-j6WppkKip3pk26ryWxuOfigL5NJY8N4X-9CoQS0IZwpLL18C2o0ZuP7JXdnefPozh5gw4Sa53KJfdciKPB7A9ct_WwuBjdubhZ4jUKElTf2FZNLSnWItcQnKKElI1iS5wcAZo5yjGg'));
+	//$message->addRecipient(new Topic('Teste TOPICO'));
 	$message
-		->setNotification(new Notification('some title', 'some body'))
-		->setData(['key' => 'value'])
+		->setNotification(new Notification('Título teste', 'Teste de corpo'))
+		->setData(['data' => 'valor'])
 	;
    
 	$response = $client->send($message);

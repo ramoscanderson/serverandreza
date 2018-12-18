@@ -109,7 +109,7 @@ switch($messageObj->request->method){
 			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->imageLocation)));
 			fclose($arquivo);
 			echo "Arquivo escrito com os dados da receita \n";
-			$localizacao = addLocalizacao("http://179.184.92.74:3397/nutriv5/img/locations/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			$localizacao = addLocalizacao($server_outside . "img/locations/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($localizacao == "success"){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setLocation",array("isSetLocation" => true)));
 			}else{
@@ -185,6 +185,7 @@ switch($messageObj->request->method){
 			break;
 		}
 		$agendamentos = carregarAgendaAdministrativo($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+		//print_r($agendamentos);
 		
 		$opcoes = carregarOpcoesAgenda($messageObj->request->client);
 		$inicio_servico = $opcoes["startService"];
@@ -220,6 +221,7 @@ switch($messageObj->request->method){
 			}else{
 				echo "Agendamento autorizado\n";
 			}
+			//print_r($messageObj->request->data);
 			$agenda = inserirAgenda($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			switch($agenda){
 				case "success":
@@ -531,6 +533,7 @@ switch($messageObj->request->method){
 		}else{
 			echo "Solicitacao de update de plano alimentar recebida\n";
 			$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			//print_r($plano_alimentar);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
 			//print_r($plano_alimentar);
 			echo "Resposta enviada\n";
@@ -761,7 +764,7 @@ switch($messageObj->request->method){
 			fclose($arquivo);
 			echo "Arquivo escrito \n";
 
-			$salvar = inserirNew("http://179.184.92.74:3397/nutriv5/img/news/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			$salvar = inserirNew($server_outside . "img/news/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			
 			if($salvar == "success"){
 				echo "new inserida com sucesso \n";
@@ -853,6 +856,31 @@ switch($messageObj->request->method){
 		break;
 
 
+
+
+	case "cancelAttendance":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelAttendance",array("isCancelAttendance" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "deletando consulta \n";
+
+			print_r($messageObj->request->data);
+
+			$medida = deleteTimeLine($messageObj->request->data);
+			if($medida == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelAttendance",array("isCancelAttendance" => true)));
+				echo "Resposta enviada\n";
+			}else{
+				echo "erro ao deletar Consulta \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelAttendance",array("isCancelAttendance" => false)));
+				echo "Resposta enviada\n";
+			}
+		}
+		break;
+
+
 	case "setFoodPlan":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
@@ -868,7 +896,7 @@ switch($messageObj->request->method){
 				echo "Atualizando dispositivo do usuario\n";
 				global $conexoes;
 				foreach ($this->clients as $client) {
-					if($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]){
+					if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
 						$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 						echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
 						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
@@ -885,6 +913,39 @@ switch($messageObj->request->method){
 		break;
 
 
+	case "cancelFoodPlan":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelFoodPlan",array("isCancelFoodPlan" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "deletando plano alimentar \n";
+
+			print_r($messageObj->request->data);
+
+			$refeicao = deletePlanoAlimentar($messageObj->request->data);
+			if($refeicao == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelFoodPlan",array("isCancelFoodPlan" => true)));
+				echo "Resposta enviada\n";
+				echo "Atualizando dispositivo do usuario\n";
+				global $conexoes;
+				foreach ($this->clients as $client) {
+					if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
+						$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+						echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					}
+				}
+				echo "Dispositivo atualizado\n";
+			}else{
+				echo "erro ao deletar refeicao \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelFoodPlan",array("isCancelFoodPlan" => false)));
+				echo "Resposta enviada\n";
+			}
+		}
+		break;
+
+
 	case "setMeal":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
@@ -892,6 +953,8 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}else{
 			echo "adicionando refeicao \n";
+			
+			print_r($messageObj->request->data);
 
 			$refeicao = addRefeicao($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($refeicao == "success"){
@@ -900,7 +963,7 @@ switch($messageObj->request->method){
 				echo "Atualizando dispositivo do usuario\n";
 				global $conexoes;
 				foreach ($this->clients as $client) {
-					if($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]){
+					if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
 						$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 						echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
 						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
@@ -910,6 +973,41 @@ switch($messageObj->request->method){
 			}else{
 				echo "erro ao inserir refeicao \n";
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeal",array("isSetMeal" => false)));
+				echo "Resposta enviada\n";
+			}
+		}
+		break;
+		
+	
+
+
+	case "cancelMeal":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelMeal",array("isCancelMeal" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "deletando refeicao \n";
+
+			print_r($messageObj->request->data);
+
+			$refeicao = deleteRefeicao($messageObj->request->data);
+			if($refeicao == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelMeal",array("isCancelMeal" => true)));
+				echo "Resposta enviada\n";
+				echo "Atualizando dispositivo do usuario\n";
+				global $conexoes;
+				foreach ($this->clients as $client) {
+					if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
+						$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+						echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					}
+				}
+				echo "Dispositivo atualizado\n";
+			}else{
+				echo "erro ao deletar refeicao \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelMeal",array("isCancelMeal" => false)));
 				echo "Resposta enviada\n";
 			}
 		}
@@ -929,7 +1027,7 @@ switch($messageObj->request->method){
 			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->img)));
 			fclose($arquivo);
 			echo "Arquivo escrito com os dados da receita \n";
-			$receita = addReceita("http://179.184.92.74:3397/nutriv5/img/recipes/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			$receita = addReceita($server_outside . "img/recipes/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($receita == "success"){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setRecipes",array("isSetRecipes" => true)));
 			}else{
@@ -937,6 +1035,31 @@ switch($messageObj->request->method){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setRecipes",array("isSetRecipes" => false)));
 			}
 			echo "Resposta enviada\n";
+		}
+		break;
+
+
+
+
+	case "cancelRecipe":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelRecipe",array("isCancelRecipe" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "deletando receita \n";
+
+			print_r($messageObj->request->data);
+
+			$medida = deleteReceita($messageObj->request->data);
+			if($medida == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelRecipe",array("isCancelRecipe" => true)));
+				echo "Resposta enviada\n";
+			}else{
+				echo "erro ao deletar Receita \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelRecipe",array("isCancelRecipe" => false)));
+				echo "Resposta enviada\n";
+			}
 		}
 		break;
 
@@ -996,6 +1119,31 @@ switch($messageObj->request->method){
 		break;
 
 
+
+
+	case "cancelMeasurement":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelMeasurement",array("isCancelMeasurement" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "deletando medicao \n";
+
+			print_r($messageObj->request->data);
+
+			$medida = deleteMedicao($messageObj->request->data);
+			if($medida == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelMeasurement",array("isCancelMeasurement" => true)));
+				echo "Resposta enviada\n";
+			}else{
+				echo "erro ao deletar Medicao \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelMeasurement",array("isCancelMeasurement" => false)));
+				echo "Resposta enviada\n";
+			}
+		}
+		break;
+
+
 	case "setMeasure":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
@@ -1012,6 +1160,41 @@ switch($messageObj->request->method){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setMeasure",array("isSetMeasure" => false)));
 			}
 			echo "Resposta enviada\n";
+		}
+		break;
+
+
+
+
+	case "cancelMeasure":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelMeasure",array("isCancelMeasure" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "deletando medida \n";
+
+			print_r($messageObj->request->data);
+
+			$medida = deleteMedida($messageObj->request->data);
+			if($medida == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelMeasure",array("isCancelMeasure" => true)));
+				echo "Resposta enviada\n";
+				echo "Atualizando dispositivo do usuario\n";
+				global $conexoes;
+				foreach ($this->clients as $client) {
+					if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
+						echo "requisicao de carregamento de medidas \n";
+						$medidas = carregarMedidas($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+						$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMeasures",$medidas));
+					}
+				}
+				echo "Dispositivo atualizado\n";
+			}else{
+				echo "erro ao deletar Medida \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelMeasure",array("isCancelMeasure" => false)));
+				echo "Resposta enviada\n";
+			}
 		}
 		break;
 
@@ -1059,10 +1242,10 @@ switch($messageObj->request->method){
 			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->img)));
 			fclose($arquivo);
 			echo "Arquivo escrito com os dados do usuario \n";
-			$salvar = atualizaAvatar("http://179.184.92.74:3397/nutriv5/img/avatar/" . $nome . ".jpeg", getJWT($messageObj->token)->id, $messageObj->request->client);
+			$salvar = atualizaAvatar($server_outside . "img/avatar/" . $nome . ".jpeg", getJWT($messageObj->token)->id, $messageObj->request->client);
 			if($salvar == "success"){
 				echo "arquivo salvo com sucesso \n";
-				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","changeImageAvatar",array("isChange" => true, "path" => "http://179.184.92.74:3397/nutriv5/img/avatar/" . $nome . ".jpeg")));
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","changeImageAvatar",array("isChange" => true, "path" => $server_outside . "img/avatar/" . $nome . ".jpeg")));
 			}else{
 				echo "erro ao salvar o arquivo \n";
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","changeImageAvatar",array("isChange" => false, "path" => null)));
@@ -1072,8 +1255,15 @@ switch($messageObj->request->method){
 		break;
 		
 		
-	case "jwt":
-		echo $from->socket_getsockname();
+	case "testquery":
+		//echo $from->socket_getsockname();
+		var_dump(openssl_get_cert_locations());
+		
+		echo "ENVIANDO NOTIFICACAO\n";
+		
+		gerar_notificacao();
+		
+		echo "NOTIFICACAO ENVIADA\n";
 		
 		/*
 		echo "Solicitacao de TESTE recebida\n";

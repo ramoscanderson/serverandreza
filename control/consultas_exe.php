@@ -5,18 +5,29 @@ function inserirConsulta($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 	
 	$date = date("Y-m-d H-i-s");
 	$paciente = $data->patient;
-	$prontuario = $data->medicalRecords;
+	$prontuario = $data->medicalRecords->medicalRecord;
+	$idProntuario = $data->medicalRecords->recordId;
 	
-	echo "Inserindo consulta\n";
-	
-	$sql = "INSERT INTO consultas (data, prontuario, paciente, usuario, cliente) VALUES (?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
-	$consulta = $bd->prepare($sql);
-	$consulta->bindValue(1, $date);
-	$consulta->bindValue(2, $prontuario);
-	$consulta->bindValue(3, $paciente);
-	$consulta->bindValue(4, $usuario);
-	$consulta->bindValue(5, $client);
-	$consulta->execute();
+	if($idProntuario){
+		echo "Alterando registro medico\n";
+
+		$sql = "UPDATE consultas SET prontuario = ? WHERE id = ?"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindParam(1, $prontuario);
+		$consulta->bindParam(2, $idProntuario);
+		$consulta->execute();
+	}else{	
+		echo "Inserindo consulta\n";
+   
+		$sql = "INSERT INTO consultas (data, prontuario, paciente, usuario, cliente) VALUES (?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+		$consulta = $bd->prepare($sql);
+		$consulta->bindValue(1, $date);
+		$consulta->bindValue(2, $prontuario);
+		$consulta->bindValue(3, $paciente);
+		$consulta->bindValue(4, $usuario);
+		$consulta->bindValue(5, $client);
+		$consulta->execute();
+	}
 	
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
@@ -91,23 +102,47 @@ function updateTimeLinePatient ($data, $client, $usuario){
 	require ("lib/bd.php");
 
 	$paciente = $data->idUser;
+	$ativo = 0;
 	
-	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ? ORDER BY data DESC";
+	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ? AND cancelado = ? ORDER BY data DESC";
 
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $client);
 	$consulta->bindParam(2, $paciente);
+	$consulta->bindParam(3, $ativo);
 	$consulta->execute();
 
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-			$dados[] = array("date"=>$row->data, "medicalRecord"=>$row->prontuario);
+			$dados[] = array("date"=>$row->data, "medicalRecord"=>$row->prontuario, "recordId"=>$row->id);
 		}
 	} else {
-		$dados[] = array("date"=>null, "medicalRecord"=>null);
+		$dados[] = array("date"=>null, "medicalRecord"=>null, "recordId"=>null);
 		echo "Nenhum registro encontrado\n";
 	}
 	return $dados;
+}
+
+
+function deleteTimeLine($data){
+	require ("lib/bd.php");
+
+	$atendimento = $data->attendance->recordId;
+	$cancelado = 1;
+
+	echo "Deletando atendimento\n";
+
+	$sql = "UPDATE consultas SET cancelado = ? WHERE id = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $cancelado);
+	$consulta->bindParam(2, $atendimento);
+	$consulta->execute();
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
 }
 
 

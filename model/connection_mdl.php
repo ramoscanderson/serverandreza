@@ -4,17 +4,13 @@ use Ratchet\ConnectionInterface;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-//PUSH NOTIFICATION
-use sngrl\PhpFirebaseCloudMessaging\Client;
-use sngrl\PhpFirebaseCloudMessaging\Message;
-use sngrl\PhpFirebaseCloudMessaging\Recipient\Device;
-use sngrl\PhpFirebaseCloudMessaging\Notification;
-//PUSH NOTIFICATION
+
 
 require("model/class.phpmailer.php");
 require("model/class.smtp.php");
 
 require ("control/functions.php");
+require ("lib/adress.php");
 require ("control/messageProtocol_exe.php");
 require ("control/agendaConsulta_exe.php");
 require ("control/usuario_exe.php");
@@ -24,6 +20,7 @@ require ("control/planoAlimentar_exe.php");
 require ("control/news_exe.php");
 require ("control/consultas_exe.php");
 require ("control/medidas_exe.php");
+require ("control/pushNotification_exe.php");
 require ("control/log_exe.php");
 
 date_default_timezone_set('America/Sao_Paulo');

@@ -47,7 +47,8 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 				alimento.cancelado = ?)
 	ON 
 		plano_alimentar.id = refeicao.plano_alimentar AND
-		plano_alimentar.cancelado = ?
+		plano_alimentar.cancelado = ? AND
+		refeicao.cancelado = ? 
 
 	WHERE 	
 		plano_alimentar.cancelado = ? and 
@@ -64,8 +65,9 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 	$consulta->bindParam(3, $ativo);
 	$consulta->bindParam(4, $ativo);
 	$consulta->bindParam(5, $ativo);
-	$consulta->bindParam(6, $client);
-	$consulta->bindParam(7, $usuario);
+	$consulta->bindParam(6, $ativo);
+	$consulta->bindParam(7, $client);
+	$consulta->bindParam(8, $usuario);
 	$consulta->execute();
 	
 	$plano_alimentar = array();
@@ -75,11 +77,19 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		$refeicao_id;
 		$plano_alimentar_id;
 		while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			
 			if(is_null($row->refeicao_id)){
+				//echo "isnull\n";
+				$refeicao_cont = -1;
 				$plano_alimentar[] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
 					array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
 						array(array("idRecipe" => null, "foodId" => null, "foodName" => null, "imgFood" => null, "ingredients" => array(), "modePrepare" => null, "consumption" => false, "obs" => null)))));
+				$plano_alimentar_id = $row->plano_alimentar_id;
+				$refeicao_id = "";
+				$plano_alimentar_cont++;
+				$refeicao_cont++;
 			}else{
+				//echo "else isnull\n";
 				$partes = explode(":", $row->refeicao_hora);
 				$hora = $partes[0];
 				$minuto = $partes[1];
@@ -107,7 +117,10 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 			echo $row->plano_alimentar_usuario . " - " . $row->plano_alimentar_id . " - " . $row->plano_alimentar_titulo . " - " . 
 				 $row->refeicao_id . " - " . $row->refeicao_hora . " - " . $row->refeicao_descricao . " - " . 
 				 $row->alimento_id . " - " . $row->alimento_nome . " - " . (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? "true" : "false"), "\n";
+			//print_r($plano_alimentar);
+			//echo "---------------------------------------------------------------------------------------\n";
 		}
+				
 	} else {
 		$plano_alimentar[] = array("planId" => null, "title" => null, "foodPlan" => 
 						array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
@@ -183,22 +196,57 @@ function cancelarConsumo($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 function addPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 
+	$plano = $data->foodPlan->planId;
+	echo "PLANO:" . $plano . "\n";
 	$paciente = $data->idUser;
-	$nome = $data->name;
+	$nome = $data->foodPlan->title;
+	echo "NOME:" . $nome . "\n";
 	$date = date('Y-m-d');
 	$cancelado = 0;
+	$consulta;
+	
+	if($plano){
+		echo "Alterando plano alimentar\n";	
+		
+		$sql = "UPDATE plano_alimentar SET titulo = ? WHERE id = ?"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindParam(1, $nome);
+		$consulta->bindParam(2, $plano);
+		$consulta->execute();
+	}else{
+		echo "Inserindo plano alimentar\n";
+   
+		$sql = "INSERT INTO plano_alimentar (data_criacao, titulo, usuario, cliente, cancelado) VALUES (?, ?, ?, ?, ?)"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindValue(1, $date);
+		$consulta->bindValue(2, $nome);
+		$consulta->bindValue(3, $paciente);
+		$consulta->bindValue(4, $client);
+		$consulta->bindValue(5, $cancelado);
+		$consulta->execute();
+	}
 
-	echo "Inserindo plano alimentar\n";
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
 
-	$sql = "INSERT INTO plano_alimentar (data_criacao, titulo, usuario, cliente, cancelado) VALUES (?, ?, ?, ?, ?)"; 
+
+function deletePlanoAlimentar($data){
+	require ("lib/bd.php");
+
+	$plano = $data->foodPlan->planId;
+	$cancelado = 1;
+
+	echo "Deletando plano alimentar\n";
+
+	$sql = "UPDATE plano_alimentar SET cancelado = ? WHERE id = ?"; 
 	$consulta = $bd->prepare($sql);
-	$consulta->bindValue(1, $date);
-	$consulta->bindValue(2, $nome);
-	$consulta->bindValue(3, $paciente);
-	$consulta->bindValue(4, $client);
-	$consulta->bindValue(5, $cancelado);
+	$consulta->bindParam(1, $cancelado);
+	$consulta->bindParam(2, $plano);
 	$consulta->execute();
-
 
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
@@ -241,14 +289,46 @@ function addRefeicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE
 		
 		foreach ($receitas as $receita){
 			echo "Inserindo alimento\n";
+			echo "Carregando informacoes da receita\n";
 
-			$sql = "INSERT INTO alimento (receita, refeicao, consumo, obs, cancelado) VALUES (?, ?, ?, ?, ?)"; 
+			$sql = "SELECT 
+						nome, imagem, ingrediente, modo_preparo, cliente
+					FROM 
+						receita
+					WHERE 
+						id = ?"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindParam(1, $receita->idRecipe);
+			$consulta->execute();
+   
+   			$receita_nome = "";   
+			$receita_imagem = "";
+			$receita_ingrediente = "";
+			$receita_modo_preparo = "";
+			$receita_cliente = "";
+
+			if($consulta->rowCount()){
+				$row = $consulta->fetch(PDO::FETCH_OBJ);
+				$receita_nome = $row->nome;   
+				$receita_imagem = $row->imagem;
+				$receita_ingrediente = $row->ingrediente;
+				$receita_modo_preparo = $row->modo_preparo;
+				$receita_cliente = $row->cliente;
+			}
+			
+			
+			$sql = "INSERT INTO alimento (receita, refeicao, consumo, obs, cancelado, nome, imagem, ingrediente, modo_preparo, cliente) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
 			$consultaReceita = $bd->prepare($sql);
 			$consultaReceita->bindValue(1, $receita->idRecipe);
 			$consultaReceita->bindValue(2, $refeicao);
 			$consultaReceita->bindValue(3, $consumo);
 			$consultaReceita->bindValue(4, $receita->obs);
 			$consultaReceita->bindValue(5, $cancelado);
+			$consultaReceita->bindValue(5, $receita_nome);
+			$consultaReceita->bindValue(5, $receita_imagem);
+			$consultaReceita->bindValue(5, $receita_ingrediente);
+			$consultaReceita->bindValue(5, $receita_modo_preparo);
+			$consultaReceita->bindValue(5, $receita_cliente);
 			$consultaReceita->execute();
 		}
 		
@@ -279,6 +359,28 @@ function addRefeicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE
 		}
 	}
 	
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function deleteRefeicao($data){
+	require ("lib/bd.php");
+
+	$refeicao = $data->meal->mealId;
+	$cancelado = 1;
+	
+	echo "Deletando refeicao\n";
+
+	$sql = "UPDATE refeicao SET cancelado = ? WHERE id = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $cancelado);
+	$consulta->bindParam(2, $refeicao);
+	$consulta->execute();
+
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
@@ -322,6 +424,28 @@ function addReceita($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQ
 		$consulta->execute();
 	}
 	
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function deleteReceita($data){
+	require ("lib/bd.php");
+
+	$receita = $data->recipe->foodId;
+	$cancelado = 1;
+
+	echo "Deletando receita\n";
+
+	$sql = "UPDATE receita SET cancelado = ? WHERE id = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $cancelado);
+	$consulta->bindParam(2, $receita);
+	$consulta->execute();
+
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
