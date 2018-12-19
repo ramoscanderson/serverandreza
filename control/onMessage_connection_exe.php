@@ -1064,6 +1064,31 @@ switch($messageObj->request->method){
 		break;
 
 
+
+
+	case "cancelFood":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelFood",array("isCancelRecipe" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "deletando alimento do usuario \n";
+
+			print_r($messageObj->request->data);
+
+			$medida = deleteAlimento($messageObj->request->data);
+			if($medida == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelFood",array("isCancelRecipe" => true)));
+				echo "Resposta enviada\n";
+			}else{
+				echo "erro ao deletar Alimento do Usuario \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelFood",array("isCancelRecipe" => false)));
+				echo "Resposta enviada\n";
+			}
+		}
+		break;
+
+
 	case "setFood":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";

@@ -17,11 +17,11 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 	$ativo = "0"; // 0 = não cancelado
 	
 	$sql = "SELECT 
-		receita.id as receita_id, 
-		receita.nome as alimento_nome, 
-		receita.imagem as alimento_imagem, 
-		receita.ingrediente as alimento_ingrediente, 
-		receita.modo_preparo as alimento_modo_preparo, 
+		alimento.receita as receita_id, 
+		alimento.nome as alimento_nome, 
+		alimento.imagem as alimento_imagem, 
+		alimento.ingrediente as alimento_ingrediente, 
+		alimento.modo_preparo as alimento_modo_preparo, 
 		alimento.id as alimento_id, 
 		alimento.consumo as alimento_consumo, 
 		alimento.obs as alimento_obs,
@@ -36,13 +36,12 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 	FROM 
 		plano_alimentar LEFT JOIN (refeicao 
 	LEFT JOIN 
-		((alimento, receita) LEFT JOIN consumo_alimento
+		((alimento) LEFT JOIN consumo_alimento
 				ON
 					consumo_alimento.alimento = alimento.id AND
 					consumo_alimento.cancelado = ?)
 		   ON
 				refeicao.id = alimento.refeicao AND
-				alimento.receita = receita.id AND
 				refeicao.cancelado = ? AND
 				alimento.cancelado = ?)
 	ON 
@@ -324,11 +323,11 @@ function addRefeicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE
 			$consultaReceita->bindValue(3, $consumo);
 			$consultaReceita->bindValue(4, $receita->obs);
 			$consultaReceita->bindValue(5, $cancelado);
-			$consultaReceita->bindValue(5, $receita_nome);
-			$consultaReceita->bindValue(5, $receita_imagem);
-			$consultaReceita->bindValue(5, $receita_ingrediente);
-			$consultaReceita->bindValue(5, $receita_modo_preparo);
-			$consultaReceita->bindValue(5, $receita_cliente);
+			$consultaReceita->bindValue(6, $receita_nome);
+			$consultaReceita->bindValue(7, $receita_imagem);
+			$consultaReceita->bindValue(8, $receita_ingrediente);
+			$consultaReceita->bindValue(9, $receita_modo_preparo);
+			$consultaReceita->bindValue(10, $receita_cliente);
 			$consultaReceita->execute();
 		}
 		
@@ -347,14 +346,45 @@ function addRefeicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE
 		
 		foreach ($receitas as $receita){
 			echo "Inserindo alimento\n";
+			echo "Carregando informacoes da receita\n";
 
-			$sql = "INSERT INTO alimento (receita, refeicao, consumo, obs, cancelado) VALUES (?, ?, ?, ?, ?)"; 
+			$sql = "SELECT 
+						nome, imagem, ingrediente, modo_preparo, cliente
+					FROM 
+						receita
+					WHERE 
+						id = ?"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindParam(1, $receita->idRecipe);
+			$consulta->execute();
+
+			$receita_nome = "";   
+			$receita_imagem = "";
+			$receita_ingrediente = "";
+			$receita_modo_preparo = "";
+			$receita_cliente = "";
+
+			if($consulta->rowCount()){
+				$row = $consulta->fetch(PDO::FETCH_OBJ);
+				$receita_nome = $row->nome;   
+				$receita_imagem = $row->imagem;
+				$receita_ingrediente = $row->ingrediente;
+				$receita_modo_preparo = $row->modo_preparo;
+				$receita_cliente = $row->cliente;
+			}
+
+			$sql = "INSERT INTO alimento (receita, refeicao, consumo, obs, cancelado, nome, imagem, ingrediente, modo_preparo, cliente) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
 			$consultaReceita = $bd->prepare($sql);
 			$consultaReceita->bindValue(1, $receita->foodId);
 			$consultaReceita->bindValue(2, $lastId);
 			$consultaReceita->bindValue(3, $consumo);
 			$consultaReceita->bindValue(4, $receita->obs);
 			$consultaReceita->bindValue(5, $cancelado);
+			$consultaReceita->bindValue(6, $receita_nome);
+			$consultaReceita->bindValue(7, $receita_imagem);
+			$consultaReceita->bindValue(8, $receita_ingrediente);
+			$consultaReceita->bindValue(9, $receita_modo_preparo);
+			$consultaReceita->bindValue(10, $receita_cliente);
 			$consultaReceita->execute();
 		}
 	}
@@ -393,37 +423,52 @@ function addReceita($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQ
 	require ("lib/bd.php");
 	
 	$receita = $data->idRecipe;
+	$alimento = $data->foodId;
 	$ingredientes = implode("<br>", $data->ingredients);
 	$modo_preparo = $data->prepareMode;
 	$imagem = $img;
 	$descricao = $data->description;
 	$cancelado = 0;
 	
-	if($receita){
-		echo "Alterando receita: \n";
+	if($alimento){
+		echo "Alterando receita do paciente: \n";
 
-		$sql = "UPDATE receita SET nome = ?, imagem = ?, ingrediente = ?, modo_preparo = ? WHERE id = ?"; 
-		$consulta = $bd->prepare($sql);
-		$consulta->bindParam(1, $descricao);
-		$consulta->bindParam(2, $imagem);
-		$consulta->bindParam(3, $ingredientes);
-		$consulta->bindParam(4, $modo_preparo);
-		$consulta->bindParam(5, $receita);
-		$consulta->execute();
+			$sql = "UPDATE alimento SET nome = ?, imagem = ?, ingrediente = ?, modo_preparo = ?, obs = ? WHERE id = ?"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindParam(1, $descricao);
+			$consulta->bindParam(2, $imagem);
+			$consulta->bindParam(3, $ingredientes);
+			$consulta->bindParam(4, $modo_preparo);
+			$consulta->bindParam(5, $data->obs);
+			$consulta->bindParam(6, $alimento);
+			$consulta->execute();
 	}else{
-		echo "Inserindo receita\n";
-
-		$sql = "INSERT INTO receita (nome, imagem, ingrediente, modo_preparo, cliente, cancelado) VALUES (?, ?, ?, ?, ?, ?)"; 
-		$consulta = $bd->prepare($sql);
-		$consulta->bindValue(1, $descricao);
-		$consulta->bindValue(2, $imagem);
-		$consulta->bindValue(3, $ingredientes);
-		$consulta->bindValue(4, $modo_preparo);
-		$consulta->bindValue(5, $client);
-		$consulta->bindValue(6, $cancelado);
-		$consulta->execute();
+		if($receita){
+			echo "Alterando receita: \n";
+   
+			$sql = "UPDATE receita SET nome = ?, imagem = ?, ingrediente = ?, modo_preparo = ? WHERE id = ?"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindParam(1, $descricao);
+			$consulta->bindParam(2, $imagem);
+			$consulta->bindParam(3, $ingredientes);
+			$consulta->bindParam(4, $modo_preparo);
+			$consulta->bindParam(5, $receita);
+			$consulta->execute();
+		}else{
+			echo "Inserindo receita\n";
+   
+			$sql = "INSERT INTO receita (nome, imagem, ingrediente, modo_preparo, cliente, cancelado) VALUES (?, ?, ?, ?, ?, ?)"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindValue(1, $descricao);
+			$consulta->bindValue(2, $imagem);
+			$consulta->bindValue(3, $ingredientes);
+			$consulta->bindValue(4, $modo_preparo);
+			$consulta->bindValue(5, $client);
+			$consulta->bindValue(6, $cancelado);
+			$consulta->execute();
+		}
 	}
-	
+		
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
@@ -444,6 +489,28 @@ function deleteReceita($data){
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $cancelado);
 	$consulta->bindParam(2, $receita);
+	$consulta->execute();
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function deleteAlimento($data){
+	require ("lib/bd.php");
+
+	$alimento = $data->recipe->foodId;
+	$cancelado = 1;
+
+	echo "Deletando alimento do usuario\n";
+
+	$sql = "UPDATE alimento SET cancelado = ? WHERE id = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $cancelado);
+	$consulta->bindParam(2, $alimento);
 	$consulta->execute();
 
 	if($consulta->rowCount()){
