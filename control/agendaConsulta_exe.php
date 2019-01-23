@@ -19,6 +19,19 @@ function cancelarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	$consulta->execute();
 
 	if($consulta){
+		/*FALTA ENVIAR O USUÁRIO CUJA CONSULTA ESTÁ SENDO CANCELADA
+		global $conexoes;
+		$usuario_consulta = consultaUsuario((object)array("id"=>$usuario), $client);
+		$usuario_fcm = consultaFCMUsuario($usuario, $client);
+		//echo "FCM NOTIFICATION: " . $usuario_fcm["fcm"] . "\n";
+		if($usuario_fcm["fcm"]){
+			gerar_notificacao($usuario_fcm["fcm"], "Novo agendamento", "Você tem uma nova consulta agendada:\nData: " . explode("-",$date)[2] . "/" . explode("-",$date)[1] . "/" . explode("-",$date)[0]  . "\n" . "Horário: " . $hour, array());
+		}
+		//var_dump($usuario_consulta);
+		if(!envia_email("Novo agendamento", $usuario_consulta["email"], "Agendamento Andreza Matteussi", "Olá " . $usuario_consulta["name"] . "\n\n" . "Você tem uma nova consulta agendada:\n Data: " . explode("-",$date)[2] . "/" . explode("-",$date)[1] . "/" . explode("-",$date)[0]  . "\n" . "Horário: " . $hour . "\n\n" . "Uma notificação de confirmação será enviada à você com 72 horas de antecedência." . "\n\n" . "Obrigado!")){
+			return "failed";
+		}
+		*/
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
 		return "failed";
@@ -69,12 +82,17 @@ function inserirAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE 
 	$consulta->execute();
 	
 	if($consulta->rowCount()){
-		/*
 		global $conexoes;
-		if(!envia_email("Você tem um novo agendamento", $conexoes["{$from->resourceId}"]["userEmail"], "Agendamento do nutricionista", "Olá " . $conexoes["{$from->resourceId}"]["userName"] . "\n\n" . "Você tem uma nova consulta agendada:\n " . $date  . "\n" . "Horário: " . $hour . "\n\n" . "Uma notificação de confirmação será enviada à você com 24 horas de antecedência.")){
+		$usuario_consulta = consultaUsuario((object)array("id"=>$usuario), $client);
+		$usuario_fcm = consultaFCMUsuario($usuario, $client);
+		//echo "FCM NOTIFICATION: " . $usuario_fcm["fcm"] . "\n";
+		if($usuario_fcm["fcm"]){
+			gerar_notificacao($usuario_fcm["fcm"], "Novo agendamento", "Você tem uma nova consulta agendada:\nData: " . explode("-",$date)[2] . "/" . explode("-",$date)[1] . "/" . explode("-",$date)[0]  . "\n" . "Horário: " . $hour, array());
+		}
+		//var_dump($usuario_consulta);
+		if(!envia_email("Novo agendamento", $usuario_consulta["email"], "Agendamento Andreza Matteussi", "Olá " . $usuario_consulta["name"] . "\n\n" . "Você tem uma nova consulta agendada:\n Data: " . explode("-",$date)[2] . "/" . explode("-",$date)[1] . "/" . explode("-",$date)[0]  . "\n" . "Horário: " . $hour . "\n\n" . "Uma notificação de confirmação será enviada à você com 72 horas de antecedência." . "\n\n" . "Obrigado!")){
 			return "failed";
 		}
-		*/
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
 	}else{
 		return "failed";
@@ -435,7 +453,7 @@ function carregarAgendaUsuario($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 				agenda_consulta.cliente = ? and
 				localizacao.cliente = ? and
 				localizacao_semana.cliente = ? 
-			ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+			ORDER BY agenda_consulta.data, hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $client);
@@ -472,22 +490,26 @@ function carregarAgendaConfirmacao($data){ //FAZER CÓDIGO QUE VERIFIQUE SE OS D
 	$agenda = array();
 	$usuarios = array();
 	$agendamentos = array();
-
+	
 	$sql = "SELECT agenda_consulta.id as agenda_id, agenda_consulta.data as agenda_data, agenda_consulta.hora_inicio as agenda_hora_inicio, 
 			agenda_consulta.hora_fim as agenda_hora_fim, agenda_consulta.usuario as agenda_usuario, agenda_consulta.cancelado as agenda_cancelado, 
-			agenda_consulta.confirmado as agenda_confirmado, usuario.nome as usuario_nome, usuario.email as usuario_email 
-			FROM agenda_consulta inner join usuario on agenda_consulta.usuario = usuario.id WHERE data = ? and cancelado = ? and confirmado = ? ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+			agenda_consulta.confirmado as agenda_confirmado, usuario.id as usuario_id, usuario.cliente as usuario_cliente, usuario.nome as usuario_nome, usuario.email as usuario_email 
+			FROM agenda_consulta inner join usuario on agenda_consulta.usuario = usuario.id WHERE 
+			(data <= ? AND data >= ?) AND
+			cancelado = ? and 
+			confirmado = ? ORDER BY hora_inicio"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $date);
-	$consulta->bindParam(2, $ativo);
-	$consulta->bindParam(3, $confirmado);
+	$consulta->bindParam(2, date('Y-m-d'));
+	$consulta->bindParam(3, $ativo);
+	$consulta->bindParam(4, $confirmado);
 	$consulta->execute();
 
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
 			$agendamentos[] = array("id_agenda" => $row->agenda_id, "data" => $row->agenda_data, "hora_inicio"=>$row->agenda_hora_inicio, "hora_fim"=>$row->agenda_hora_fim, "usuario"=>$row->agenda_usuario,
-									"cancelado"=>$row->agenda_cancelado, "confirmado"=>$row->agenda_confirmado, "usuario_nome"=>$row->usuario_nome, "usuario_email"=>$row->usuario_email);
+									"cancelado"=>$row->agenda_cancelado, "confirmado"=>$row->agenda_confirmado, "usuario_id"=>$row->usuario_id, "usuario_cliente"=>$row->usuario_cliente, "usuario_nome"=>$row->usuario_nome, "usuario_email"=>$row->usuario_email);
 			echo $row->agenda_id . " - " . $row->agenda_data . " - " . $row->agenda_hora_inicio . " - " . $row->agenda_hora_fim . " - " . $row->agenda_usuario . "\n";
 	   }
 	} else {
@@ -536,10 +558,31 @@ function carregarLocalizacaoSemana($date, $cliente){ //FAZER CÓDIGO QUE VERIFIQ
 
 }
 
-function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $usuario, $cliente){
+function verificarRetorno($usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+	$cancelado = 0;
+
+	$sql = "SELECT * FROM agenda_consulta WHERE usuario = ? AND cancelado = ?"; 
+
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $usuario);
+	$consulta->bindParam(2, $cancelado);
+	$consulta->execute();
+
+	if ($consulta->rowCount() > 0) {
+	   return true;
+	}else{
+		return false;
+	}
+}
+
+function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $intervalo_padrao_retorno, $usuario, $cliente){
 	
 	$date = $agendamentos[0]["data"];
 	$local = carregarLocalizacaoSemana($date, $cliente);
+	if(verificarRetorno($usuario)){
+		$intervalo_padrao = $intervalo_padrao_retorno;
+	}
 	$hora_atual = $inicio_servico;
 	$adicional = "00:00:00";
 	$index = 0;
@@ -595,10 +638,10 @@ function classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $in
 					"id" => null,
 					"date" => $date,
 					"time" => str_replace(":", "h", substr($hora_atual, 0, 5)) . " às " . str_replace(":", "h", substr($hora_final, 0, 5)),
-					"available" => true,
+					"available" => (($local["indisponivel"] == 1) ? false : true),   //true
 					"confirmedSchedule" => false,
 					"mySchedule" => false,
-					"strAvailable" => "Horário disponível",
+					"strAvailable" => (($local["indisponivel"] == 1) ? "Indisponível" : "Horário disponível"),   //"Horário disponível"
 					"titleAdress" => (is_null($agendamentos[$index]["titleAdress"]) ? (isset($local["titleAdress"]) ? $local["titleAdress"] : null) : $agendamentos[$index]["titleAdress"]),
 					"subTitleAdress" => (is_null($agendamentos[$index]["subTitleAdress"]) ? (isset($local["subTitleAdress"]) ? $local["subTitleAdress"] : null) : $agendamentos[$index]["subTitleAdress"]), 
 					"destination" => (is_null($agendamentos[$index]["destination"]) ? (isset($local["destination"]) ? $local["destination"] : null) : $agendamentos[$index]["destination"]),
@@ -735,7 +778,7 @@ function classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termin
 					"id" => null,
 					"date" => $date,
 					"time" => str_replace(":", "h", substr($hora_atual, 0, 5)) . " às " . str_replace(":", "h", substr($hora_final, 0, 5)),
-					"available" => true,
+					"available" => true,  
 					"idUser" => "0",
 					"nameUser" => null,
 					"cpfUser" => null,
@@ -745,7 +788,7 @@ function classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termin
 					"birthdayUser" => null,
 					"imageUser" => null,
 					"mySchedule" => false,
-					"strAvailable" => "Horário disponível",
+					"strAvailable" => (($local["indisponivel"] == 1) ? "Reservado" : "Horário disponível"),   //"Horário disponível"
 					"titleAdress" => (is_null($agendamentos[$index]["titleAdress"]) ? (isset($local["titleAdress"]) ? $local["titleAdress"] : null) : $agendamentos[$index]["titleAdress"]),
 					"subTitleAdress" => (is_null($agendamentos[$index]["subTitleAdress"]) ? (isset($local["subTitleAdress"]) ? $local["subTitleAdress"] : null) : $agendamentos[$index]["subTitleAdress"]), 
 					"destination" => (is_null($agendamentos[$index]["destination"]) ? (isset($local["destination"]) ? $local["destination"] : null) : $agendamentos[$index]["destination"]),
@@ -858,7 +901,8 @@ function carregarOpcoesAgenda($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADO
 	$sql = "SELECT
 				hora_inicio,
 				hora_termino,
-				intervalo_padrao
+				intervalo_padrao,
+				intervalo_padrao_reconsulta
 			FROM
 				opcoes_agenda
 			WHERE
@@ -870,10 +914,10 @@ function carregarOpcoesAgenda($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADO
 
 	if ($consulta->rowCount() > 0) {
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-			$dados = array("startService"=>$row->hora_inicio, "endService"=>$row->hora_termino, "defaultAttendance"=>$row->intervalo_padrao);
+			$dados = array("startService"=>$row->hora_inicio, "endService"=>$row->hora_termino, "defaultAttendance"=>$row->intervalo_padrao, "defaultAttendanceReturn"=>$row->intervalo_padrao_reconsulta);
 		}
 	} else {
-		$dados = array("startService"=>null, "endService"=>null, "defaultAttendance"=>null);
+		$dados = array("startService"=>null, "endService"=>null, "defaultAttendance"=>null, "defaultAttendanceReturn"=>null);
 		echo "Nenhum registro encontrado\n";
 	}
 	return $dados;	
@@ -885,15 +929,17 @@ function atualizarOpcoesAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VE
 	$hora_inicio = $data->startService;
 	$hora_termino = $data->endService;
 	$intervalo_padrao = $data->defaultAttendance;
+	$intervalo_padrao_reconsulta = "01:00:00"; //$data->defaultAttendanceReturn;
 
 	echo "Inserindo novo padrao de agenda\n";
 
-	$sql = "UPDATE opcoes_agenda SET hora_inicio = ?, hora_termino = ?, intervalo_padrao = ? WHERE cliente = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "UPDATE opcoes_agenda SET hora_inicio = ?, hora_termino = ?, intervalo_padrao = ?, intervalo_padrao_reconsulta = ? WHERE cliente = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $hora_inicio);
 	$consulta->bindParam(2, $hora_termino);
 	$consulta->bindParam(3, $intervalo_padrao);
-	$consulta->bindParam(4, $client);
+	$consulta->bindParam(4, $intervalo_padrao_reconsulta);
+	$consulta->bindParam(5, $client);
 	$consulta->execute();
 
 	if($consulta->rowCount()){
@@ -911,9 +957,10 @@ function carregarLocalizacoes($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADO
 	echo $client. "\n";
 	$cancelado = 0;
 
-	$sql = "SELECT id, titulo_endereco, subtitulo_endereco, coordenada, img, cliente FROM localizacao WHERE cliente = ?"; 
+	$sql = "SELECT id, titulo_endereco, subtitulo_endereco, coordenada, img, cliente FROM localizacao WHERE cliente = ? AND cancelado = ?"; 
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $client);
+	$consulta->bindParam(2, $cancelado);
 	$consulta->execute();
 
 	$localizacoes = array();
@@ -1025,6 +1072,28 @@ function addLocalizacao($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VER
 		$consulta->bindValue(5, $client);
 		$consulta->execute();
 	}
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function deleteLocalizacao($data){
+	require ("lib/bd.php");
+
+	$local = $data->idLocation;
+	$cancelado = 1;
+
+	echo "Deletando localizacao\n";
+
+	$sql = "UPDATE localizacao SET cancelado = ? WHERE id = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $cancelado);
+	$consulta->bindParam(2, $local);
+	$consulta->execute();
 
 	if($consulta->rowCount()){
 		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE

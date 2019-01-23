@@ -1,7 +1,7 @@
 
 <script>
-//var socket = new WebSocket('ws://179.184.92.74:3396');
-var socket = new WebSocket('ws://192.168.1.32:8000?token=teste');
+var socket = new WebSocket('ws://179.184.92.74:3396');
+//var socket = new WebSocket('ws://192.168.1.32:8000?token=teste');
 //var socket = new WebSocket('ws://bioformula.dyndns.org:8000?token=teste');
 
 socket.onopen = function(event){

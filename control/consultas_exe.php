@@ -104,12 +104,50 @@ function updateTimeLinePatient ($data, $client, $usuario){
 	$paciente = $data->idUser;
 	$ativo = 0;
 	
-	$sql = "SELECT id, data, prontuario, paciente, usuario, cliente FROM consultas WHERE cliente = ? AND paciente = ? AND cancelado = ? ORDER BY data DESC";
+	$sql = "(SELECT 
+				id, 
+				data, 
+				prontuario, 
+				paciente, 
+				usuario, 
+				cliente 
+			FROM 
+				consultas 
+			WHERE 
+				cliente = ? AND 
+				paciente = ? AND 
+				cancelado = ?)
+
+			UNION
+
+			(SELECT 
+				CONCAT('consumo_',consumo_alimento.id) as id, 
+				consumo_alimento.data as data, CONCAT('Consumo do alimento ', alimento.nome, ' no ', refeicao.descricao, ' do plano ', plano_alimentar.titulo) as prontuario, 
+				consumo_alimento.usuario as paciente, 
+				consumo_alimento.usuario as usuario, 
+				consumo_alimento.cliente as cliente 
+			FROM 
+				consumo_alimento 
+			INNER JOIN 
+				(refeicao, alimento, plano_alimentar) 
+			ON 
+				refeicao.id = consumo_alimento.refeicao AND 
+				alimento.id = consumo_alimento.alimento AND 
+				plano_alimentar.id = consumo_alimento.plano_alimentar 
+			WHERE 
+				consumo_alimento.usuario = ? AND 
+				consumo_alimento.cliente = ? AND 
+				consumo_alimento.cancelado = ?) 
+				
+			ORDER BY data DESC";
 
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $client);
 	$consulta->bindParam(2, $paciente);
 	$consulta->bindParam(3, $ativo);
+	$consulta->bindParam(4, $paciente);
+	$consulta->bindParam(5, $client);
+	$consulta->bindParam(6, $ativo);
 	$consulta->execute();
 
 	if ($consulta->rowCount() > 0) {

@@ -1,5 +1,5 @@
 ﻿<?php
-
+require ("lib/adress.php");
 $numRecv = count($this->clients) - 1;
 echo sprintf("\n" . 'Conexao %d enviou uma requisicao - ' . date('H:i:s d-m-Y') . "\n", $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
 
@@ -25,10 +25,11 @@ switch($messageObj->request->method){
 			$inicio_servico = $opcoes["startService"];
 			$termino_servico = $opcoes["endService"];
 			$intervalo_padrao = $opcoes["defaultAttendance"];
+			$intervalo_padrao_retorno = $opcoes["defaultAttendanceReturn"];
    			
-			//print_r($agendamentos);
+			//print_r($agendamentos); 
 			
-			$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
+			$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $intervalo_padrao_retorno, getJWT($messageObj->token)->id, $messageObj->request->client);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateMySchedules",$agenda[1]));
 			//print_r($agenda[1]);
 			echo "Resposta enviada\n";
@@ -121,6 +122,25 @@ switch($messageObj->request->method){
 		break;
 
 
+	case "cancelLocation":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelLocation",array("isCanceledLocation" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "cancelando localizacao \n";
+			$localizacao = deleteLocalizacao($messageObj->request->data);
+			if($localizacao == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelLocation",array("isCanceledLocation" => true)));
+			}else{
+				echo "erro ao cancelar localizacao \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelLocation",array("isCanceledLocation" => false)));
+			}
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
 	case "setConfirmedSchedule":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
@@ -168,8 +188,9 @@ switch($messageObj->request->method){
 		$inicio_servico = $opcoes["startService"];
 		$termino_servico = $opcoes["endService"];
 		$intervalo_padrao = $opcoes["defaultAttendance"];
+		$intervalo_padrao_retorno = $opcoes["defaultAttendanceReturn"];
 
-		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
+		$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $intervalo_padrao_retorno, getJWT($messageObj->token)->id, $messageObj->request->client);
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleByDay",$agenda[0]));
 		//print_r($agenda);
 		echo "Resposta enviada\n";
@@ -191,6 +212,7 @@ switch($messageObj->request->method){
 		$inicio_servico = $opcoes["startService"];
 		$termino_servico = $opcoes["endService"];
 		$intervalo_padrao = $opcoes["defaultAttendance"];
+		$intervalo_padrao_retorno = $opcoes["defaultAttendanceReturn"];
 
 		$agenda = classificarAgendaAdministrativo($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, getJWT($messageObj->token)->id, $messageObj->request->client);
 		$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateScheduleDay",$agenda[0]));
@@ -240,6 +262,7 @@ switch($messageObj->request->method){
 					$inicio_servico = $opcoes["startService"];
 					$termino_servico = $opcoes["endService"];
 					$intervalo_padrao = $opcoes["defaultAttendance"];
+					$intervalo_padrao_retorno = $opcoes["defaultAttendanceReturn"];
 
 					foreach ($this->clients as $client) {
 						if($conexoes["$client->resourceId"]["userId"] != "-1"){	
@@ -249,7 +272,7 @@ switch($messageObj->request->method){
 							if($conexoes["$client->resourceId"]["admin"]){
 								$agenda = classificarAgendaAdministrativo($agendamentosAdm, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
 							}else{
-								$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+								$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $intervalo_padrao_retorno, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
 							}
 							
 							echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
@@ -298,6 +321,7 @@ switch($messageObj->request->method){
 					$inicio_servico = $opcoes["startService"];
 					$termino_servico = $opcoes["endService"];
 					$intervalo_padrao = $opcoes["defaultAttendance"];
+					$intervalo_padrao_retorno = $opcoes["defaultAttendanceReturn"];
 
 					foreach ($this->clients as $client) {
 						if($conexoes["$client->resourceId"]["userId"] != "-1"){		
@@ -307,7 +331,7 @@ switch($messageObj->request->method){
 							if($conexoes["$client->resourceId"]["admin"]){
 								$agenda = classificarAgendaAdministrativo($agendamentosAdm, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
 							}else{
-								$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
+								$agenda = classificarAgenda($agendamentos, $inicio_servico, $termino_servico, $intervalo_padrao, $intervalo_padrao_retorno, $conexoes["$client->resourceId"]["userId"], $messageObj->request->client);
 							}
 							
 							echo "Enviando agenda para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
@@ -351,9 +375,11 @@ switch($messageObj->request->method){
 		}
 		$user;
 		echo "Validando autorizacao de cadastro\n";
-		if(validaCadastroUsuario($messageObj->request->data, $messageObj->request->client)){
+		$validacao = validaCadastroUsuario($messageObj->request->data, $messageObj->request->client);
+		if(($validacao["encontrado"] && !$validacao["ativo"]) || (!$validacao["encontrado"])){
 			echo "Cadastro de usuario autorizado\n";
-   			$user = cadastraUsuario($messageObj->request->data, $messageObj->request->client);
+			global $conexoes;
+   			$user = cadastraUsuario($messageObj->request->data, $messageObj->request->client, $conexoes["{$from->resourceId}"]["admin"], $validacao["atualizar"]);
 		}else{
 			echo "Cadastro de usuario nao autorizado\n";//------------------------------------------------------------------------------------------------------------------------------------------ CONTINUAR AQUI
 			$from->send(message_setProtocol($messageObj->request->id,"613","Error - Unauthorized Register","1.0.5","setUser",array("isUser" => false)));
@@ -653,6 +679,24 @@ switch($messageObj->request->method){
 			$news = carregarNew($messageObj->request->client);
 			//print_r($news);
 			$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateNews",$news));
+			echo "Resposta enviada\n";
+		}
+		break;
+
+
+	case "cancelNews":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelNews",array("isCanceledNew" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Solicitacao de cancelNews recebida\n";
+			$news = cancelarNew($messageObj->request->data);
+			if($news == "success"){
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelNews",array("isCanceledNew" => true)));
+			}else{
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelNews",array("isCanceledNew" => false)));
+			}
 			echo "Resposta enviada\n";
 		}
 		break;
@@ -1261,9 +1305,11 @@ switch($messageObj->request->method){
 			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","changeImageAvatar",array("isChange" => false)));
 			echo "Resposta enviada\n";
 		}else{
+			//echo $msg . "\n";
 			$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
 			echo "Novo arquivo de imagem criado: " . $nome . "\n";
 			$arquivo = fopen("img/avatar/" . $nome . ".jpeg", "wb");
+			echo "arquivo aberto \n";
 			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->img)));
 			fclose($arquivo);
 			echo "Arquivo escrito com os dados do usuario \n";
@@ -1278,6 +1324,26 @@ switch($messageObj->request->method){
 			echo "Resposta enviada\n";
 		}
 		break;
+
+
+
+	case "setFCMRegistrationId":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+		}else{
+			global $conexoes;
+			$alterar = alterarFCM((object)array("userId"=>$conexoes["{$from->resourceId}"]["userId"], "fcm"=>$messageObj->request->data->registrationId));
+			if($alterar == "success"){
+				echo "registro FCM alterado com sucesso \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFCMRegistrationId",array("isSetFCM" => true)));
+			}else{
+				echo "erro ao registrar FCM \n";
+				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setFCMRegistrationId",array("isSetFCM" => false)));
+			}
+			
+			echo "Resposta enviada\n";
+		}
+		break;
 		
 		
 	case "testquery":
@@ -1286,7 +1352,8 @@ switch($messageObj->request->method){
 		
 		echo "ENVIANDO NOTIFICACAO\n";
 		
-		gerar_notificacao();
+		//gerar_notificacao();
+		gerar_notificacao("fo5gCZqeL_Y:APA91bEUkctZiAt-qT0C7jnNHqSnPO6VVJfYBhBfkHaLmBzRDpLWAbclYj9XR02bmuG4LIzTUKQHqs5jb-kqfsleyHWI9Ev6uq8R6GLyaFrnxseyB6EstnoE-VcyNBWWYDH05jyfW-UwEP4qUpjPhOnQp8AnsL6RHQ", "teste", "corpo", array());
 		
 		echo "NOTIFICACAO ENVIADA\n";
 		

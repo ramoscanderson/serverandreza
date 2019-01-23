@@ -23,6 +23,7 @@ require ("control/medidas_exe.php");
 require ("control/pushNotification_exe.php");
 require ("control/log_exe.php");
 
+
 date_default_timezone_set('America/Sao_Paulo');
 
 class Connection implements MessageComponentInterface {
@@ -44,7 +45,17 @@ class Connection implements MessageComponentInterface {
 
 	public function onMessage(ConnectionInterface $from, $msg) {
 		//caminho a partir da raiz pois está classe está sendo requerida no connection_srv
-		require ("control/onMessage_connection_exe.php");
+		try{
+			require ("control/onMessage_connection_exe.php");
+		}catch(Error $e){
+			echo "\n\n\n\nFATAL ERROR CAPTURADO: " . $e->getMessage() . "\n";
+			echo "ARQUIVO: " . $e->getFile() . "\n";
+			echo "LINHA: " . $e->getLine() . "\n";
+			echo "REGISTRANDO ERRO" . "\n\n\n\n";
+			require ("control/erro_exe.php");
+			$from->send(message_setProtocol("00000","900","Failed","1.0.5","fatalError",array()));
+			// retorno de mensagem ao cliente
+		}
 	}
 
 	public function onClose(ConnectionInterface $conn) {

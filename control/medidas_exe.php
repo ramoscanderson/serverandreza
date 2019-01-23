@@ -14,11 +14,11 @@ function addMedicao($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE 
 	if($medicao){
 		echo "Alterando medicao\n";
 
-		$sql = "UPDATE medicoes SET valor = ?, data = ? WHERE id = ?"; 
+		$sql = "UPDATE medicoes SET valor = ? WHERE id = ?"; 
 		$consulta = $bd->prepare($sql);
 		$consulta->bindParam(1, $valor);
-		$consulta->bindParam(2, $date);
-		$consulta->bindParam(3, $medicao);
+		//$consulta->bindParam(2, $date);
+		$consulta->bindParam(2, $medicao);
 		$consulta->execute();
 	}else{
 		echo "Inserindo medicao no usuario: " . $paciente . "\n";

@@ -1,15 +1,16 @@
 ﻿<?php
 
-function cancelarNew($id){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+function cancelarNew($data){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 
 	$id = $data->id;
+	$cancelado = 1;
 	
 	echo "Cancelando registro: $id\n";
 
-	$sql = ""; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$sql = "UPDATE news SET cancelado = ? WHERE id = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
 	$consulta = $bd->prepare($sql);
-	$consulta->bindParam(1, $motivo);
+	$consulta->bindParam(1, $cancelado);
 	$consulta->bindParam(2, $id);
 	$consulta->execute();
 
@@ -116,7 +117,7 @@ function carregarNew($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM 
 				$categoria = array();
 				$ult_id = $row->new_id;
 				$categoria[] = $row->categoria_nome;
-				$dados = array("id" => $row->new_id, "date" => $row->new_data_postagem, "imgAvatar"=>$row->new_avatar, "content"=>$row->new_conteudo, "userName"=>$row->usuario_nome, "categories"=>$categoria);
+				$dados = array("id" => $row->new_id, "date" => $row->new_data_postagem, "img"=>$row->new_img, "imgAvatar"=>$row->new_avatar, "content"=>$row->new_conteudo, "userName"=>$row->usuario_nome, "categories"=>$categoria);
 			}
 		}
 		$news[] = $dados;
