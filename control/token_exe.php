@@ -81,6 +81,7 @@ EOD;
 
 
 function isVisitante($jwt){
+	//echo "JWT VISITANTE: " .  $jwt . "\n";
 	$privateKey = <<<EOD
 -----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQC8kGa1pSjbSYZVebtTRBLxBz5H4i2p/llLCrEeQhta5kaQu/Rn

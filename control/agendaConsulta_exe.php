@@ -1046,11 +1046,31 @@ function addLocalizacao($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VER
 	$titulo_endereco = $data->titleAdressLocation;
 	$subtitulo_endereco = $data->subTitleAdressLocation;
 	$coordenada = $data->coordinateLocation;
+	$flag = $data->flagImage;
 		
 	$cancelado = 0;
 
 	if($localizacao){
 		echo "Alterando localizacao\n";
+		
+		if($flag){
+			$sql = "UPDATE localizacao SET titulo_endereco = ?, subtitulo_endereco = ?, coordenada = ?, img = ? WHERE id = ?"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindParam(1, $titulo_endereco);
+			$consulta->bindParam(2, $subtitulo_endereco);
+			$consulta->bindParam(3, $coordenada);
+			$consulta->bindParam(4, $img);
+			$consulta->bindParam(5, $localizacao);
+			$consulta->execute();
+		}else{
+			$sql = "UPDATE localizacao SET titulo_endereco = ?, subtitulo_endereco = ?, coordenada = ? WHERE id = ?"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindParam(1, $titulo_endereco);
+			$consulta->bindParam(2, $subtitulo_endereco);
+			$consulta->bindParam(3, $coordenada);
+			$consulta->bindParam(4, $localizacao);
+			$consulta->execute();
+		}		
 		
 		$sql = "UPDATE localizacao SET titulo_endereco = ?, subtitulo_endereco = ?, coordenada = ?, img = ? WHERE id = ?"; 
 		$consulta = $bd->prepare($sql);

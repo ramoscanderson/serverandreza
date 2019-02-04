@@ -103,13 +103,14 @@ switch($messageObj->request->method){
 			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setLocation",array("isSetLocation" => false)));
 			echo "Resposta enviada\n";
 		}else{
+			//print_r($messageObj->request->data);
 			echo "adicionando localizacao \n";
 			$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
 			echo "Novo arquivo de localizacao criado: " . $nome . "\n";
 			$arquivo = fopen("img/locations/" . $nome . ".jpeg", "wb");
 			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->imageLocation)));
 			fclose($arquivo);
-			echo "Arquivo escrito com os dados da receita \n";
+			echo "Arquivo escrito com os dados da Localiazcao \n";
 			$localizacao = addLocalizacao($server_outside . "img/locations/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 			if($localizacao == "success"){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setLocation",array("isSetLocation" => true)));
@@ -379,6 +380,7 @@ switch($messageObj->request->method){
 		if(($validacao["encontrado"] && !$validacao["ativo"]) || (!$validacao["encontrado"])){
 			echo "Cadastro de usuario autorizado\n";
 			global $conexoes;
+			print_r($validacao);
    			$user = cadastraUsuario($messageObj->request->data, $messageObj->request->client, $conexoes["{$from->resourceId}"]["admin"], $validacao["atualizar"]);
 		}else{
 			echo "Cadastro de usuario nao autorizado\n";//------------------------------------------------------------------------------------------------------------------------------------------ CONTINUAR AQUI
@@ -567,6 +569,41 @@ switch($messageObj->request->method){
 		break;
 
 
+	case "importPlan":
+		if(isVisitante($messageObj->token)){
+			echo "Token de visitante nao autorizado\n";
+			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","addConsumption",array("isImportPlan" => false)));
+			echo "Resposta enviada\n";
+		}else{
+			echo "Solicitacao para duplicar plano alimentar recebida\n";
+			if(!validar_estrutura_data($messageObj->request->data, array("idPlanImport","userId"))){
+				$from->send(message_setProtocol($messageObj->request->id,"611","Error - Missing data","1.0.5","importPlan",array("isImportPlan" => false)));
+				echo "Dados necessarios nao recebidos\n";
+				echo "Resposta enviada\n";
+				break;
+			}
+			$plano = duplicarPlano($messageObj->request->data, $messageObj->request->client);
+			//$plano = "failed";
+
+			switch($plano){
+				case "success":
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","addConsumption",array("isImportPlan" => true)));
+					echo "Resposta enviada\n";
+					echo "Atualizando dispositivo\n";
+					$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					echo "Resposta enviada\n";
+					break;
+				case "failed":
+					echo "Erro ao importar plano alimentar\n";
+					$from->send(message_setProtocol($messageObj->request->id,"603","Error - Could not insert record","1.0.5","importPlan",array("isImportPlan" => false)));
+					echo "Resposta enviada\n";
+					break;
+			}
+		}
+		break;
+
+
 	case "addConsumption":
 		if(isVisitante($messageObj->token)){
 			echo "Token de visitante nao autorizado\n";
@@ -648,6 +685,7 @@ switch($messageObj->request->method){
 				echo "Resposta enviada\n";
 				break;
 			}
+			print_r($messageObj->request->data);
 			$user = alterarDadosUsuario($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 
 			switch($user){
@@ -670,7 +708,7 @@ switch($messageObj->request->method){
 
 
 	case "updateNews":
-		if(isVisitante($messageObj->token)){
+		if(/*isVisitante($messageObj->token)*/ false){
 			echo "Token de visitante nao autorizado\n";
 			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updateNews",array("updateNews" => false)));
 			echo "Resposta enviada\n";
@@ -703,7 +741,7 @@ switch($messageObj->request->method){
 
 
 	case "updateCategoriesNews":
-		if(isVisitante($messageObj->token)){
+		if(/*isVisitante($messageObj->token)*/ false){
 			echo "Token de visitante nao autorizado\n";
 			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","updateCategoriesNews",array("updateCategoriesNews" => false)));
 			echo "Resposta enviada\n";
@@ -1064,6 +1102,7 @@ switch($messageObj->request->method){
 			$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","setRecipes",array("isSetRecipes" => false)));
 			echo "Resposta enviada\n";
 		}else{
+			//print_r($messageObj->request->data);
 			echo "adicionando receita \n";
 			$nome = date("YmdHis") . "_" .  mt_rand(10000,99999);
 			echo "Novo arquivo de imagem criado: " . $nome . "\n";
@@ -1071,7 +1110,12 @@ switch($messageObj->request->method){
 			$escreve = fwrite($arquivo, base64_decode(str_replace("data:image/jpeg;base64,", "", $messageObj->request->data->img)));
 			fclose($arquivo);
 			echo "Arquivo escrito com os dados da receita \n";
-			$receita = addReceita($server_outside . "img/recipes/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			$receita;
+			if(isset($messageObj->request->data->mealId) && $messageObj->request->data->mealId != 0){
+				$receita = addAlimentoUsuario($server_outside . "img/recipes/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			}else{
+				$receita = addReceita($server_outside . "img/recipes/" . $nome . ".jpeg", $messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+			}
 			if($receita == "success"){
 				$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","setRecipes",array("isSetRecipes" => true)));
 			}else{

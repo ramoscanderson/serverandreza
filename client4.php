@@ -146,6 +146,10 @@ var formData = JSON.stringify(encodeURIComponent(window.btoa(document.getElement
 <input type='text' id='mensagem10' value='{"token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZCI6IjQiLCJkYXRlX2NyZWF0ZSI6IjIwMTgtMDMtMDciLCJhZG1pbiI6ZmFsc2UsImRldmVsb3BlciI6ZmFsc2V9.anp1W1SD521Bn3980enUkNXbBzwxga5HKtTPgGw1YjqARElwvXQFee_w5WrS10F1fNFH446BT3dI2Rr50rdPJhevDy3nVNnwiHDEd-fPqd0e1_6K_BRlK1Cmrv0eoG_WuTrHd9SWLPCzPlT7PXwBDMuytMSpVTLIDlIVDdhbIGA","request":{"id":"1235","status":"200","version":"1.0.0","method":"updateMySchedules","client":"1","data":{"id":"2", "date":"2018-02-27"}}}'><button onclick="enviar(document.getElementById('mensagem10').value)">updateMySchedules</button><br><br>
 <input type='text' id='mensagem11' value='{"token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZCI6IjQiLCJkYXRlX2NyZWF0ZSI6IjIwMTgtMDMtMDciLCJhZG1pbiI6ZmFsc2UsImRldmVsb3BlciI6ZmFsc2V9.anp1W1SD521Bn3980enUkNXbBzwxga5HKtTPgGw1YjqARElwvXQFee_w5WrS10F1fNFH446BT3dI2Rr50rdPJhevDy3nVNnwiHDEd-fPqd0e1_6K_BRlK1Cmrv0eoG_WuTrHd9SWLPCzPlT7PXwBDMuytMSpVTLIDlIVDdhbIGA","request":{"id":"1235","status":"200","version":"1.0.0","method":"scheduleFollowUp","client":"1","data":{"id":"2", "date":"2018-02-27"}}}'><button onclick="enviar(document.getElementById('mensagem11').value)">scheduleFollowUp</button><br><br>
 <input type='text' id='mensagem12' value='CONNECT'><button onclick="new WebSocket('ws://192.168.1.32:8000');">NEW CONNECTION</button><br><br>
+<input type='text' id='mensagem13' value='{"token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZCI6IjQiLCJkYXRlX2NyZWF0ZSI6IjIwMTgtMDMtMDciLCJhZG1pbiI6ZmFsc2UsImRldmVsb3BlciI6ZmFsc2V9.anp1W1SD521Bn3980enUkNXbBzwxga5HKtTPgGw1YjqARElwvXQFee_w5WrS10F1fNFH446BT3dI2Rr50rdPJhevDy3nVNnwiHDEd-fPqd0e1_6K_BRlK1Cmrv0eoG_WuTrHd9SWLPCzPlT7PXwBDMuytMSpVTLIDlIVDdhbIGA","request":{"id":"1235","status":"200","version":"1.0.0","method":"importPlan","client":"1","data":{"idPlanImport":"75","userId":"2"}}}'><button onclick="enviar(document.getElementById('mensagem13').value)">ImportPLAN</button><br><br>
+
+
+
 <div id='texto'></div>
 
 
