@@ -193,7 +193,8 @@ function carregarMedidas($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQU
 		$medidas[] = array("descriptionMeasure" => $medida_nome, "unityMeasure" => $medida_unidade, "idMeasure" => $medida_atual, "values" => $array_values);
 		
 	}else{
-		$medidas[] = array("descriptionMeasure" => null, "unityMeasure" => null, "idMeasure" => null, "values" => null);
+		//$medidas[] = array("descriptionMeasure" => null, "unityMeasure" => null, "idMeasure" => null, "values" => null);
+		$medidas[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 

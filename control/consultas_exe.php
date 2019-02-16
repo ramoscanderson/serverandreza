@@ -92,7 +92,8 @@ function carregarAcompanhamento($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DA
 	   		$dados[] = array("avatar"=>$row->usuario_avatar, "birthdayUser"=>$row->usuario_data_nascimento, "userName"=>$row->usuario_nome, "cpfUser"=>$row->usuario_cpf, "emailUser"=>$row->usuario_email, "userPhone"=>$row->usuario_telefone, "userId"=>$row->usuario_id, "lastAttendance"=>$row->consultas_data, "lastAccess"=>$row->log_data, "totalAttendanceUser"=>$row->total_consumo, "totalReturnUser"=>$row->total_registro);
 		}
 	} else {
-		$dados[] = array("avatar"=>null, "birthdayUser"=>null, "userName"=>null, "cpfUser"=>null, "emailUser"=>null, "userPhone"=>null, "userId"=>null, "lastAttendance"=>null, "lastAccess"=>null, "totalAttendanceUser"=>null, "totalReturnUser"=>null);
+		//$dados[] = array("avatar"=>null, "birthdayUser"=>null, "userName"=>null, "cpfUser"=>null, "emailUser"=>null, "userPhone"=>null, "userId"=>null, "lastAttendance"=>null, "lastAccess"=>null, "totalAttendanceUser"=>null, "totalReturnUser"=>null);
+		$dados[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	return $dados;	
@@ -155,7 +156,8 @@ function updateTimeLinePatient ($data, $client, $usuario){
 			$dados[] = array("date"=>$row->data, "medicalRecord"=>$row->prontuario, "recordId"=>$row->id);
 		}
 	} else {
-		$dados[] = array("date"=>null, "medicalRecord"=>null, "recordId"=>null);
+		//$dados[] = array("date"=>null, "medicalRecord"=>null, "recordId"=>null);
+		$dados[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	return $dados;

@@ -15,6 +15,7 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 	echo "Plano alimentar do usuario:" . $usuario . "\n";
 	
 	$ativo = "0"; // 0 = não cancelado
+	$ativado = "1";
 	
 	$sql = "SELECT 
 		ciclo.id as ciclo_id,
@@ -23,6 +24,62 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		ciclo.data_fechamento as ciclo_data_fechamento,
 		ciclo.feedback as ciclo_feedback,
 		ciclo.cancelado as ciclo_cancelado,
+		ciclo.ativo as ciclo_ativo,
+		ciclo.cliente as ciclo_cliente,
+		ciclo.usuario as ciclo_usuario,
+		alimento.receita as receita_id, 
+		alimento.nome as alimento_nome, 
+		alimento.imagem as alimento_imagem, 
+		alimento.ingrediente as alimento_ingrediente, 
+		alimento.modo_preparo as alimento_modo_preparo, 
+		alimento.id as alimento_id, 
+		alimento.consumo as alimento_consumo, 
+		alimento.obs as alimento_obs,
+		refeicao.id as refeicao_id, 
+		refeicao.hora as refeicao_hora, 
+		refeicao.descricao as refeicao_descricao,
+		plano_alimentar.id as plano_alimentar_id, 
+		plano_alimentar.titulo as plano_alimentar_titulo, 
+		plano_alimentar.usuario as plano_alimentar_usuario,
+		MAX(consumo_alimento.data) as ultimo_consumo,
+		SUM(alimento.consumo) as quant
+	FROM 
+		ciclo LEFT JOIN  
+		 (plano_alimentar LEFT JOIN (refeicao 
+	LEFT JOIN 
+		((alimento) LEFT JOIN consumo_alimento
+				ON
+					consumo_alimento.alimento = alimento.id AND
+					consumo_alimento.cancelado = ?)
+		   ON
+				refeicao.id = alimento.refeicao AND
+				refeicao.cancelado = ? AND
+				alimento.cancelado = ?)
+	ON 
+		plano_alimentar.id = refeicao.plano_alimentar AND
+		plano_alimentar.cancelado = ? AND
+		refeicao.cancelado = ? ) ON 
+		 ciclo.id = plano_alimentar.ciclo AND
+				plano_alimentar.cancelado = ?
+
+	WHERE 	
+		ciclo.cancelado = ? and 
+		ciclo.cliente = ?  and 
+		ciclo.usuario = ?
+	GROUP BY 
+		alimento.id, refeicao.id, plano_alimentar.id
+	ORDER BY 
+		plano_alimentar.id, refeicao.hora, refeicao.id, quant";
+
+	/*
+	$sql = "SELECT 
+		ciclo.id as ciclo_id,
+		ciclo.descricao as ciclo_descricao,
+		ciclo.data_criacao as ciclo_data_criacao,
+		ciclo.data_fechamento as ciclo_data_fechamento,
+		ciclo.feedback as ciclo_feedback,
+		ciclo.cancelado as ciclo_cancelado,
+		ciclo.ativo as ciclo_ativo,
 		ciclo.cliente as ciclo_cliente,
 		ciclo.usuario as ciclo_usuario,
 		alimento.receita as receita_id, 
@@ -65,12 +122,15 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		ciclo.usuario = ? and
 		plano_alimentar.cancelado = ? and 
 		plano_alimentar.cliente = ?  and 
-		plano_alimentar.usuario = ? 
+		plano_alimentar.usuario = ? and
+		ciclo.ativo = ?
 	GROUP BY 
 		alimento.id, refeicao.id, plano_alimentar.id
 	ORDER BY 
 		plano_alimentar.id, refeicao.hora, refeicao.id, quant"; //FAZER CORREÇÃO PARA MAIS CLIENTES  , alimento.consumo
-	
+	*/
+
+
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $ativo);
 	$consulta->bindParam(2, $ativo);
@@ -83,6 +143,7 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 	$consulta->bindParam(9, $ativo);
 	$consulta->bindParam(10, $client);
 	$consulta->bindParam(11, $usuario);
+	$consulta->bindParam(12, $ativado);
 	$consulta->execute();
 	
 	$plano_alimentar = array();
@@ -95,153 +156,12 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		$ciclo_id = "";
 		//echo "\n\n\n";
 		while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			
+			
+			
+			
+
 			/*
-			if(is_null($row->plano_alimentar_id)){
-				//echo "PLANO ALIMENTAR isnull\n";
-				$refeicao_cont = -1;
-				$plano_alimentar[] = array("cicloId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "date_create" => $row->ciclo_data_criacao, "date_end" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "cancel" => $row->ciclo_cancelado, "plan" =>
-						array(array("planId" => null, "title" => null, "foodPlan" => 
-						array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
-						array(array("idRecipe" => null, "foodId" => null, "foodName" => null, "imgFood" => null, "ingredients" => array(), "modePrepare" => null, "consumption" => false, "obs" => null)))))));
-				$ciclo_cont++;
-				$ciclo_id = $row->ciclo_id;
-				//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-			}else{
-				//echo "ELSE - PLANO ALIMENTAR isnull\n";
-				if($ciclo_id == ""){
-					//echo "CICLO = vazio\n";
-					$ciclo_id = $row->ciclo_id;
-					if(is_null($row->refeicao_id)){
-						//echo "REFEICAO isnull\n";
-						$plano_alimentar[] = array("cicloId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "date_create" => $row->ciclo_data_criacao, "date_end" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "cancel" => $row->ciclo_cancelado, "plan" =>
-								array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
-								array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
-								array(array("idRecipe" => null, "foodId" => null, "foodName" => null, "imgFood" => null, "ingredients" => null, "modePrepare" => null, "consumption" => false, "obs" => null)))))));
-						$plano_alimentar_id = $row->plano_alimentar_id;
-						$refeicao_cont = -1;
-						$refeicao_id = "";
-						$plano_alimentar_cont++;
-						//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-					}else{
-						//echo "ELSE - REFEICAO isnull\n";
-						$partes = explode(":", $row->refeicao_hora);
-						$hora = $partes[0];
-						$minuto = $partes[1];
-   
-   						$plano_alimentar[] = array("cicloId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "date_create" => $row->ciclo_data_criacao, "date_end" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "cancel" => $row->ciclo_cancelado, "plan" =>
-								array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
-								array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
-								array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))))));
-						$plano_alimentar_id = $row->plano_alimentar_id;
-						$refeicao_id = $row->refeicao_id;
-						$plano_alimentar_cont++;
-						$refeicao_cont++;
-						//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-						//var_dump($plano_alimentar);
-					}					
-				}else{
-					//echo "ELSE - CICLO = vazio\n";
-					if($ciclo_id == $row->ciclo_id){
-						//echo "CICLO ID = CICLO ID\n";
-						if(is_null($row->refeicao_id)){
-							//echo "REFEICAO isnull\n";
-							$plano_alimentar[$ciclo_cont]["plan"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
-								array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
-									array(array("idRecipe" => null, "foodId" => null, "foodName" => null, "imgFood" => null, "ingredients" => null, "modePrepare" => null, "consumption" => false, "obs" => null)))));
-							$plano_alimentar_id = $row->plano_alimentar_id;
-							$refeicao_cont = -1;
-							$refeicao_id = "";
-							$plano_alimentar_cont++;
-							//echo "ADICIONA PLAN - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-						}else{
-							//echo "ELSE - REFEICAO isnull\n";
-							$partes = explode(":", $row->refeicao_hora);
-							$hora = $partes[0];
-							$minuto = $partes[1];
-   
-							if($plano_alimentar_id == $row->plano_alimentar_id){
-								//echo "PLANO ID = PLANO ID\n";
-								if($refeicao_id == $row->refeicao_id){
-									//echo "REFEICAO ID = REFEICAO ID\n";
-									$plano_alimentar[$ciclo_cont]["plan"][$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs);
-									//echo "ADICIONA ALIMENTO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-									//var_dump($plano_alimentar);
-								}else{
-									//echo "ELSE - REFEICAO ID = REFEICAO ID\n";
-									$plano_alimentar[$ciclo_cont]["plan"][$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
-										array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)));
-									$refeicao_id = $row->refeicao_id;
-									$refeicao_cont++;
-									//echo "ADICIONA REFEICAO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";	
-								}							
-							}else{
-								//echo "ELSE - PLANO ID = PLANO ID\n";
-								$refeicao_cont = -1;
-								$plano_alimentar[$ciclo_cont]["plan"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
-									array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
-										array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))));
-								$plano_alimentar_id = $row->plano_alimentar_id;
-								$refeicao_id = $row->refeicao_id;
-								$plano_alimentar_cont++;
-								$refeicao_cont++;
-								//echo "ADICIONA PLANO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-							}
-						}
-					}else{
-						//echo "ELSE - CICLO ID = CICLO ID\n";
-						if(is_null($row->refeicao_id)){
-							//echo "REFEICAO isnull\n";
-							$refeicao_cont = -1;
-							$plano_alimentar[] = array("cicloId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "date_create" => $row->ciclo_data_criacao, "date_end" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "cancel" => $row->ciclo_cancelado, "plan" =>
-									array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
-									array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
-									array(array("idRecipe" => null, "foodId" => null, "foodName" => null, "imgFood" => null, "ingredients" => array(), "modePrepare" => null, "consumption" => false, "obs" => null)))))));
-							$plano_alimentar_id = $row->plano_alimentar_id;
-							$refeicao_id = "";
-							$plano_alimentar_cont++;
-							$refeicao_cont++;
-							$ciclo_cont++;
-							$ciclo_id = $row->ciclo_id;
-							//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-						}else{
-							//echo "ELSE - REFEICAO isnull\n";
-							$partes = explode(":", $row->refeicao_hora);
-							$hora = $partes[0];
-							$minuto = $partes[1];
-   
-							if($plano_alimentar_id == $row->plano_alimentar_id){
-								//echo "PLANO ID = PLANO ID\n";
-								if($refeicao_id == $row->refeicao_id){
-									//echo "REFEICAO ID = REFEICAO ID\n";
-									$plano_alimentar[$ciclo_cont]["plan"][$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs);
-									//echo "ADICIONA ALIMENTO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-								}else{
-									//echo "ELSE - REFEICAO ID = REFEICAO ID\n";
-									$plano_alimentar[$ciclo_cont]["plan"][$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
-										array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)));
-									$refeicao_id = $row->refeicao_id;
-									$refeicao_cont++;
-									//echo "ADICIONA REFEICAO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";	
-								}
-							}else{
-								//echo "ELSE - PLANO ID = PLANO ID\n";
-								$refeicao_cont = -1;
-								$plano_alimentar[$ciclo_cont]["plan"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
-									array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
-										array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))));
-								$plano_alimentar_id = $row->plano_alimentar_id;
-								$refeicao_id = $row->refeicao_id;
-								$plano_alimentar_cont++;
-								$refeicao_cont++;
-								//echo "ADICIONA PLANO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
-							}
-						}
-					}
-				}				
-			}
-			*/
-			
-			
 			//ALTERAR PARA VERIFICAR SE PLANO EXISTE, CASO SIM, CONTINUA IGUAL ABAIXO COM ALTERAÇÕES PARA CICLO, CASO NÃO ADICIONA APENAS O CICLO
 			if(is_null($row->refeicao_id)){
 				//echo "isnull\n";
@@ -279,7 +199,62 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 					$refeicao_cont++;
 				}
 			}
+			*/
+
+
 			
+			//ALTERAR PARA VERIFICAR SE PLANO EXISTE, CASO SIM, CONTINUA IGUAL ABAIXO COM ALTERAÇÕES PARA CICLO, CASO NÃO ADICIONA APENAS O CICLO
+			if(is_null($row->refeicao_id)){
+				//echo "isnull\n";
+				$refeicao_cont = -1;
+				$plano_alimentar[] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+					array());
+				$plano_alimentar_id = $row->plano_alimentar_id;
+				$refeicao_id = "";
+				$plano_alimentar_cont++;
+				$refeicao_cont++;
+			}else{
+				//echo "else isnull\n";
+				$partes = explode(":", $row->refeicao_hora);
+				$hora = $partes[0];
+				$minuto = $partes[1];
+   
+				if($plano_alimentar_id == $row->plano_alimentar_id){
+					if($refeicao_id == $row->refeicao_id){
+						if(is_null($row->receita_id)){
+							$plano_alimentar[$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array();
+						}else{
+							$plano_alimentar[$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs);							
+						}
+					}else{
+						if(is_null($row->receita_id)){
+							$plano_alimentar[$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => array());
+						}else{
+							$plano_alimentar[$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+								array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)));
+						}
+						$refeicao_id = $row->refeicao_id;
+						$refeicao_cont++;	
+					}
+				}else{
+					$refeicao_cont = -1;
+					if(is_null($row->receita_id)){
+						$plano_alimentar[] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+							array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => array())));
+					}else{
+						$plano_alimentar[] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+							array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+								array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))));
+					}					
+					$plano_alimentar_id = $row->plano_alimentar_id;
+					$refeicao_id = $row->refeicao_id;
+					$plano_alimentar_cont++;
+					$refeicao_cont++;
+				}
+			}
+			
+
+
 			echo $row->plano_alimentar_usuario . " - " . $row->plano_alimentar_id . " - " . $row->plano_alimentar_titulo . " - " . 
 				 $row->refeicao_id . " - " . $row->refeicao_hora . " - " . $row->refeicao_descricao . " - " . 
 				 $row->alimento_id . " - " . $row->alimento_nome . " - " . (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? "true" : "false"), "\n";
@@ -289,9 +264,289 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		}
 				
 	} else {
+		/*
 		$plano_alimentar[] = array("planId" => null, "title" => null, "foodPlan" => 
 						array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
 							array(array("idRecipe" => $row->receita_id, "foodId" => null, "imgFood" => null, "ingredients" => array(), "modePrepare" => null, "obs" => null)))));
+		*/
+		$plano_alimentar = array();
+		echo "Nenhum registro encontrado\n";
+	}
+	
+	return $plano_alimentar;
+	
+}
+
+function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+	/*
+	if($usuario != "2"){
+		$usuario = 3;
+	}
+	*/
+	
+	if(isset($data->idUser)){
+		$usuario = $data->idUser;
+	}
+	
+	echo "Plano alimentar do usuario:" . $usuario . "\n";
+	
+	$ativo = "0"; // 0 = não cancelado
+	
+	$sql = "SELECT 
+		ciclo.id as ciclo_id,
+		ciclo.descricao as ciclo_descricao,
+		ciclo.data_criacao as ciclo_data_criacao,
+		ciclo.data_fechamento as ciclo_data_fechamento,
+		ciclo.feedback as ciclo_feedback,
+		ciclo.cancelado as ciclo_cancelado,
+		ciclo.ativo as ciclo_ativo,
+		ciclo.cliente as ciclo_cliente,
+		ciclo.usuario as ciclo_usuario,
+		alimento.receita as receita_id, 
+		alimento.nome as alimento_nome, 
+		alimento.imagem as alimento_imagem, 
+		alimento.ingrediente as alimento_ingrediente, 
+		alimento.modo_preparo as alimento_modo_preparo, 
+		alimento.id as alimento_id, 
+		alimento.consumo as alimento_consumo, 
+		alimento.obs as alimento_obs,
+		refeicao.id as refeicao_id, 
+		refeicao.hora as refeicao_hora, 
+		refeicao.descricao as refeicao_descricao,
+		plano_alimentar.id as plano_alimentar_id, 
+		plano_alimentar.titulo as plano_alimentar_titulo, 
+		plano_alimentar.usuario as plano_alimentar_usuario,
+		MAX(consumo_alimento.data) as ultimo_consumo,
+		SUM(alimento.consumo) as quant
+	FROM 
+		ciclo LEFT JOIN  
+		 (plano_alimentar LEFT JOIN (refeicao 
+	LEFT JOIN 
+		((alimento) LEFT JOIN consumo_alimento
+				ON
+					consumo_alimento.alimento = alimento.id AND
+					consumo_alimento.cancelado = ?)
+		   ON
+				refeicao.id = alimento.refeicao AND
+				refeicao.cancelado = ? AND
+				alimento.cancelado = ?)
+	ON 
+		plano_alimentar.id = refeicao.plano_alimentar AND
+		plano_alimentar.cancelado = ? AND
+		refeicao.cancelado = ? ) ON 
+		 ciclo.id = plano_alimentar.ciclo AND
+				plano_alimentar.cancelado = ?
+
+	WHERE 	
+		ciclo.cancelado = ? and 
+		ciclo.cliente = ?  and 
+		ciclo.usuario = ?
+	GROUP BY 
+		alimento.id, refeicao.id, plano_alimentar.id
+	ORDER BY 
+		plano_alimentar.id, refeicao.hora, refeicao.id, quant"; //FAZER CORREÇÃO PARA MAIS CLIENTES  , alimento.consumo
+	
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $ativo);
+	$consulta->bindParam(2, $ativo);
+	$consulta->bindParam(3, $ativo);
+	$consulta->bindParam(4, $ativo);
+	$consulta->bindParam(5, $ativo);
+	$consulta->bindParam(6, $ativo);
+	$consulta->bindParam(7, $ativo);
+	$consulta->bindParam(8, $client);
+	$consulta->bindParam(9, $usuario);
+	$consulta->execute();
+	
+	$plano_alimentar = array();
+	$ciclo_cont = 0;
+	$plano_alimentar_cont = -1;
+	$refeicao_cont = -1;
+	if ($consulta->rowCount() > 0) {
+		$refeicao_id;
+		$plano_alimentar_id;
+		$ciclo_id = "";
+		//echo "\n\n\n";
+		while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			
+			
+			if(is_null($row->plano_alimentar_id)){
+				//echo "PLANO ALIMENTAR isnull\n";
+				$refeicao_cont = -1;
+				$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" => array());
+				$ciclo_cont++;
+				$ciclo_id = $row->ciclo_id;
+				//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+			}else{
+				//echo "ELSE - PLANO ALIMENTAR isnull\n";
+				if($ciclo_id == ""){
+					//echo "CICLO = vazio\n";
+					$ciclo_id = $row->ciclo_id;
+					if(is_null($row->refeicao_id)){
+						//echo "REFEICAO isnull\n";
+						$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" =>
+								array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => array(array()))));
+						$plano_alimentar_id = $row->plano_alimentar_id;
+						$refeicao_cont = -1;
+						$refeicao_id = "";
+						$plano_alimentar_cont++;
+						//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+					}else{
+						//echo "ELSE - REFEICAO isnull\n";
+						$partes = explode(":", $row->refeicao_hora);
+						$hora = $partes[0];
+						$minuto = $partes[1];
+   
+   						$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" =>
+								array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+								array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+								array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))))));
+						$plano_alimentar_id = $row->plano_alimentar_id;
+						$refeicao_id = $row->refeicao_id;
+						$plano_alimentar_cont++;
+						$refeicao_cont++;
+						//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+						//var_dump($plano_alimentar);
+					}					
+				}else{
+					//echo "ELSE - CICLO = vazio\n";
+					if($ciclo_id == $row->ciclo_id){
+						//echo "CICLO ID = CICLO ID\n";
+						if(is_null($row->refeicao_id)){
+							//echo "REFEICAO isnull\n";
+							$plano_alimentar[$ciclo_cont]["plans"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => array());
+							$plano_alimentar_id = $row->plano_alimentar_id;
+							$refeicao_cont = -1;
+							$refeicao_id = "";
+							$plano_alimentar_cont++;
+							//echo "ADICIONA PLAN - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+						}else{
+							//echo "ELSE - REFEICAO isnull\n";
+							$partes = explode(":", $row->refeicao_hora);
+							$hora = $partes[0];
+							$minuto = $partes[1];
+   
+							if($plano_alimentar_id == $row->plano_alimentar_id){
+								//echo "PLANO ID = PLANO ID\n";
+								if($refeicao_id == $row->refeicao_id){
+									//echo "REFEICAO ID = REFEICAO ID\n";
+									if(is_null($row->receita_id)){
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array();
+									}else{
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs);
+									}
+									//echo "ADICIONA ALIMENTO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+									//var_dump($plano_alimentar);
+								}else{
+									//echo "ELSE - REFEICAO ID = REFEICAO ID\n";
+									if(is_null($row->receita_id)){
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array());
+									}else{
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)));
+									}
+									$refeicao_id = $row->refeicao_id;
+									$refeicao_cont++;
+									//echo "ADICIONA REFEICAO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";	
+								}							
+							}else{
+								//echo "ELSE - PLANO ID = PLANO ID\n";
+								$refeicao_cont = -1;
+								if(is_null($row->receita_id)){
+									$plano_alimentar[$ciclo_cont]["plans"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+										array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array())));
+								}else{
+									$plano_alimentar[$ciclo_cont]["plans"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+										array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))));
+								}
+								$plano_alimentar_id = $row->plano_alimentar_id;
+								$refeicao_id = $row->refeicao_id;
+								$plano_alimentar_cont++;
+								$refeicao_cont++;
+								//echo "ADICIONA PLANO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+							}
+						}
+					}else{
+						//echo "ELSE - CICLO ID = CICLO ID\n";
+						if(is_null($row->refeicao_id)){
+							//echo "REFEICAO isnull\n";
+							$refeicao_cont = -1;
+							$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" =>
+									array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => array())));
+							$plano_alimentar_id = $row->plano_alimentar_id;
+							$refeicao_id = "";
+							$plano_alimentar_cont++;
+							$refeicao_cont++;
+							$ciclo_cont++;
+							$ciclo_id = $row->ciclo_id;
+							//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+						}else{
+							//echo "ELSE - REFEICAO isnull\n";
+							$partes = explode(":", $row->refeicao_hora);
+							$hora = $partes[0];
+							$minuto = $partes[1];
+   
+							if($plano_alimentar_id == $row->plano_alimentar_id){
+								//echo "PLANO ID = PLANO ID\n";
+								if($refeicao_id == $row->refeicao_id){
+									//echo "REFEICAO ID = REFEICAO ID\n";
+									if(is_null($row->receita_id)){
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array();
+									}else{
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][$refeicao_cont]["content"][] = array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs);
+									}
+									//echo "ADICIONA ALIMENTO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+								}else{
+									//echo "ELSE - REFEICAO ID = REFEICAO ID\n";
+									if(is_null($row->receita_id)){
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array());
+									}else{
+										$plano_alimentar[$ciclo_cont]["plans"][$plano_alimentar_cont]["foodPlan"][] = array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)));
+									}
+									$refeicao_id = $row->refeicao_id;
+									$refeicao_cont++;
+									//echo "ADICIONA REFEICAO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";	
+								}
+							}else{
+								//echo "ELSE - PLANO ID = PLANO ID\n";
+								$refeicao_cont = -1;
+								if(is_null($row->receita_id)){
+									$plano_alimentar[$ciclo_cont]["plans"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+										array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array())));
+								}else{
+									$plano_alimentar[$ciclo_cont]["plans"][] = array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
+										array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
+											array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))));
+								}
+								$plano_alimentar_id = $row->plano_alimentar_id;
+								$refeicao_id = $row->refeicao_id;
+								$plano_alimentar_cont++;
+								$refeicao_cont++;
+								//echo "ADICIONA PLANO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
+							}
+						}
+					}
+				}				
+			}
+			
+			//print_r($plano_alimentar);
+			//echo "---------------------------------------------------------------------------------------\n";
+		}
+				
+	} else {
+		/*
+		$plano_alimentar[] = array("planId" => null, "title" => null, "foodPlan" => 
+						array(array("mealId" => null, "hour" => null, "description" => null, "content" => 
+							array(array("idRecipe" => $row->receita_id, "foodId" => null, "imgFood" => null, "ingredients" => array(), "modePrepare" => null, "obs" => null)))));
+		*/
+		$plano_alimentar = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	
@@ -367,7 +622,7 @@ function addPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFI
 	echo "PLANO:" . $plano . "\n";
 	$paciente = $data->idUser;
 	$nome = $data->foodPlan->title;
-	$ciclo = $data->foodPlan->cicloId;
+	$ciclo = $data->foodPlan->cycleId;
 	echo "NOME:" . $nome . "\n";
 	$date = date('Y-m-d');
 	$cancelado = 0;
@@ -769,7 +1024,8 @@ function carregarReceitas($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VI
 			$receitas[] = array("idRecipe" => $row->id, "nameRecipe" => $row->nome, "imageRecipe" => $row->imagem, "ingredientsRecipe" => explode("<br>", $row->ingrediente), "prepareModeRecipe" => $row->modo_preparo);
 		}
 	}else{
-		$receitas[] = array("idRecipe" => null, "nameRecipe" => null, "imageRecipe" => null, "ingredientsRecipe" => null, "prepareModeRecipe" => null);
+		//$receitas[] = array("idRecipe" => null, "nameRecipe" => null, "imageRecipe" => null, "ingredientsRecipe" => null, "prepareModeRecipe" => null);
+		$receitas[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 
@@ -811,7 +1067,7 @@ function duplicarPlano($data, $client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADO
 
 	$plano = $data->idPlanImport;
 	$usuario = $data->userId;
-	$ciclo = $data->cicloId;
+	$ciclo = $data->cycleId;
 	$date = date('Y-m-d');
 	$cancelado = 0;
 		
@@ -871,28 +1127,58 @@ function addCiclo($data, $client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIE
 	
 	// PEGAR O CICLO A SER COPIADO E ISERIR OUTRO CICLO COPIANDO TODOS OS PLANOS PARA ESSE CICLO INSERIDO
 	// CASO PASSE O ID DO CICLO ANTIGO "0", ENTÃO É APENAS A CRIAÇÃO DE UM CICLO NOVO
-	
-	/*
-	$plano = $data->idPlanImport;
-	$usuario = $data->userId;
-	$ciclo = $data->cicloId;
-	$date = date('Y-m-d');
+	$ciclo = $data->cycleId;
+	$impotado = $data->cycleImportId;
+	$date = date('Y-m-d H:i:s');
+	$descricao = $data->description;
+	$feedback = $data->feedback;
 	$cancelado = 0;
+	$ativo = 0;
+	$usuario = $data->userId;
 
-	echo "USUARIO: " . $usuario . " - PLANO: " . $plano . "\n";
+	print_r($data);
 
-	echo "Duplicando plano\n";
 
-	$sql = "INSERT INTO plano_alimentar (data_criacao, titulo, ciclo, usuario, cliente, cancelado) (SELECT ? as data_criacao, titulo, ? as ciclo, ? as usuario, cliente, ? as cancelado FROM plano_alimentar WHERE id = ?)"; 
-	$consulta = $bd->prepare($sql);
-	$consulta->bindValue(1, $date);
-	$consulta->bindValue(2, $ciclo);
-	$consulta->bindValue(3, $usuario);
-	$consulta->bindValue(4, $cancelado);
-	$consulta->bindValue(5, $plano);
-	$consulta->execute();
-	*/
+	if($ciclo){
+		$sql = "UPDATE ciclo SET descricao = ?, feedback = ? WHERE id = ?"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindParam(1, $descricao);
+		$consulta->bindParam(2, $feedback);
+		$consulta->bindParam(3, $ciclo);
+		$consulta->execute();
 
+		if($consulta->rowCount()){
+			return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+		}else{
+			return "failed";
+		}
+	}else{
+		$sql = "INSERT INTO ciclo (descricao, data_criacao, feedback, cancelado, cliente, usuario, ativo) VALUES (?,?,?,?,?,?,?)"; 
+		$consulta = $bd->prepare($sql);
+		$consulta->bindValue(1, $descricao);
+		$consulta->bindValue(2, $date);
+		$consulta->bindValue(3, $feedback);
+		$consulta->bindValue(4, $cancelado);
+		$consulta->bindValue(5, $client);
+		$consulta->bindValue(6, $usuario);
+		$consulta->bindValue(7, $ativo);
+		$consulta->execute();
+	
+		$ciclo_inserido = $bd->lastInsertId();
+	
+		if($impotado){
+			$sql = "SELECT id, usuario FROM plano_alimentar WHERE ciclo = ?"; 
+			$consulta = $bd->prepare($sql);
+			$consulta->bindParam(1, $ciclo);
+			$consulta->execute();
+	
+			while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+				$dados = (object)array("idPlanImport"=>$row->id, "userId"=>$row->usuario, "cycleId"=>$ciclo_inserido);
+				duplicarPlano($dados, $client);
+			}		
+		}
+		return "success";
+	}
 
 }
 

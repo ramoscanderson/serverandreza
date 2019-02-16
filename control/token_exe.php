@@ -120,5 +120,15 @@ EOD;
 	}
 }
 
+function validaToken($jwt){
+	// echo "VALIDA: " . count(explode(".",$jwt)) . "\n";
+	// echo "TOKEN: " . $jwt . "\n";
+	if(count(explode(".",$jwt)) == 3){
+		return true;
+	}else{
+		return false;
+	}
+}
+
 
 ?>

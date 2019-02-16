@@ -67,7 +67,36 @@ function inserirAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE 
 		$h_inicial = explode(":", $hora_inicio);
 		$h_final = explode(":", $duracao);
 		$hora_fim = date("H:i:s", mktime(($h_inicial[0] + $h_final[0]),($h_inicial[1] + $h_final[1]),00,00,00,00));
-	}	
+	}
+	
+	// REALIZAR CONSULTA PELA HORA >= HORA_INICIO E <= HORA_FIM E DATA = DATA 
+	// PARA SABER SE JÁ EXISTE UM AGENDAMENTO REALIZADO
+
+	
+	$sql = "SELECT 
+				* 
+			FROM 
+				agenda_consulta 
+			WHERE 
+				data = ? and 
+				? < hora_fim and 
+				? > hora_inicio and 
+				cliente = ?";
+
+	$consulta1 = $bd->prepare($sql);
+	$consulta1->bindParam(1, $date);
+	$consulta1->bindParam(2, $hora_inicio);
+	$consulta1->bindParam(3, $hora_fim);
+	$consulta1->bindParam(4, $client);
+	$consulta1->execute();
+	
+	if ($consulta1->rowCount() > 0) {
+		echo "agendamento nao permitido, conflito de horarios\n";
+		return "failed";
+	} 
+	
+
+
 	
 	echo "Inserindo registro: $date - $hora_inicio - $hora_fim - $usuario\n";
 	
@@ -197,6 +226,7 @@ function carregarAgenda($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	   }
 	} else {
 		$agendamentos[] = array("id" => null, "data" => $date, "hora_inicio"=>null, "hora_fim"=>null, "usuario"=>0);
+		//$agendamentos[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	
@@ -305,6 +335,7 @@ function carregarAgendaAdministrativo($data, $client, $usuario){ //FAZER CÓDIGO
 	} else {
 		$agendamentos[] = array("id" => $row->agenda_id, 
 			"data" => $date, "hora_inicio"=>null, "hora_fim"=>null, "usuario"=>"0", "titleAdress"=>null, "subTitleAdress"=>null, "destination"=>null, "imgDestination"=>null, "idUser"=>null, "nameUser"=>null, "cpfUser"=>null, "emailUser"=>null, "phoneUser"=>null, "birthdayUser"=>null, "imageUser"=>null);;
+		//$agendamentos[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 
@@ -404,6 +435,7 @@ function carregarAgenda7Days($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE S
 	   }
 	} else {
 		$agendamentos[] = array("id" => null, "data" => null, "horario"=>null, "usuario_id"=>null, "usuario_nome"=>null, "usuario_telefone"=>null, "titleAdress"=>null, "subTitleAdress"=>null, "destination"=>null, "imgDestination"=>null);
+		$agendamentos[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 
@@ -473,6 +505,7 @@ function carregarAgendaUsuario($client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE
 	   }
 	} else {
 		$agendamentos[] = array("id" => null, "data" => $date, "hora_inicio"=>null, "hora_fim"=>null, "usuario"=>0);
+		//$agendamentos[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 
@@ -514,6 +547,7 @@ function carregarAgendaConfirmacao($data){ //FAZER CÓDIGO QUE VERIFIQUE SE OS D
 	   }
 	} else {
 		$agendamentos[] = array("id" => null, "data" => $date, "hora_inicio"=>null, "hora_fim"=>null, "usuario"=>0);
+		//$agendamentos[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 
@@ -552,6 +586,9 @@ function carregarLocalizacaoSemana($date, $cliente){ //FAZER CÓDIGO QUE VERIFIQ
 	   while($row = $consulta->fetch(PDO::FETCH_OBJ)){
 			$localizacao = array("titleAdress"=>$row->localizacao_titulo_endereco, "subTitleAdress"=>$row->localizacao_subtitulo_endereco, "destination"=>$row->localizacao_coordenada, "imgDestination"=>$row->localizacao_img, "indisponivel"=>$row->localizacao_semana_indisponivel);
 	   }
+	}else{
+		$localizacao = array();
+		echo "Nenhum registro encontrado\n";
 	} 
 
 	return $localizacao;
@@ -917,7 +954,8 @@ function carregarOpcoesAgenda($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADO
 			$dados = array("startService"=>$row->hora_inicio, "endService"=>$row->hora_termino, "defaultAttendance"=>$row->intervalo_padrao, "defaultAttendanceReturn"=>$row->intervalo_padrao_reconsulta);
 		}
 	} else {
-		$dados = array("startService"=>null, "endService"=>null, "defaultAttendance"=>null, "defaultAttendanceReturn"=>null);
+		//$dados = array("startService"=>null, "endService"=>null, "defaultAttendance"=>null, "defaultAttendanceReturn"=>null);
+		$dados = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	return $dados;	
@@ -954,7 +992,7 @@ function carregarLocalizacoes($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADO
 
 	echo "Carregando localizacoes\n";
 
-	echo $client. "\n";
+	//echo $client. "\n";
 	$cancelado = 0;
 
 	$sql = "SELECT id, titulo_endereco, subtitulo_endereco, coordenada, img, cliente FROM localizacao WHERE cliente = ? AND cancelado = ?"; 
@@ -970,6 +1008,7 @@ function carregarLocalizacoes($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADO
 		}
 	}else{
 		$localizacoes[] = array("idLocation" => null, "titleAdressLocation" => null, "subTitleAdressLocation" => null, "coordinateLocation" => null, "imageLocation" => null);
+		//$localizacoes[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 
@@ -1009,7 +1048,8 @@ function carregarLocalizacoesSemana($client){ //FAZER CÓDIGO QUE VERIFIQUE SE O
 			$localizacoes[] = array("weekLocation" => $row->dia_semana, "idLocation" => $row->id);
 		}
 	}else{
-		$localizacoes[] = array("weekLocation" => null, "idLocalization" => null);
+		//$localizacoes[] = array("weekLocation" => null, "idLocalization" => null);
+		$localizacoes[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 

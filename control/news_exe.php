@@ -24,6 +24,7 @@ function cancelarNew($data){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CO
 function inserirNew($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
 	
+	$new = $data->id;
 	$date = date("Y-m-d H-i-s");
 	echo $date . "\n";
 	$imagem = $img; //$data->img;
@@ -36,33 +37,80 @@ function inserirNew($img, $data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQ
 	echo $client . "\n";
 	$cancelado = 0;
 	echo $cancelado . "\n";
+	$flag = $data->flagImage;
 	
-	echo "Inserindo new\n";
-	
-	$sql = "INSERT INTO news (data_postagem, img, avatar, conteudo, usuario, cliente, cancelado) VALUES (?, ?, ?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
-	$consulta = $bd->prepare($sql);
-	$consulta->bindValue(1, $date);
-	$consulta->bindValue(2, $imagem);
-	$consulta->bindValue(3, $avatar);
-	$consulta->bindValue(4, $conteudo);
-	$consulta->bindValue(5, $usuario);
-	$consulta->bindValue(6, $client);
-	$consulta->bindValue(7, $cancelado);
-	$consulta->execute();
-	
-	if($consulta->rowCount()){
-		foreach ($data->categories as $categorie) {
-			$sql = "INSERT INTO news_categorias (new, categoria, cancelado) VALUES ((select max(id) from news where cliente = ?), (select id from categorias where nome = ? and cliente = ?), ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	// SE FOR UPDATE DELETA AS CETGORIAS CADASTRADAS PARA AQUELA NEW E RECADASTRA
+	if($new){
+		
+		echo "Atualizando new\n";
+		$consulta1;
+
+		if($flag){
+			$sql = "UPDATE news SET img = ?, conteudo = ? WHERE id = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+			$consulta1 = $bd->prepare($sql);
+			$consulta1->bindParam(1, $imagem);
+			$consulta1->bindParam(2, $conteudo);
+			$consulta1->bindParam(3, $new);
+			$consulta1->execute();
+		}else{
+			$sql = "UPDATE news SET conteudo = ? WHERE id = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+			$consulta1 = $bd->prepare($sql);
+			$consulta1->bindParam(1, $conteudo);
+			$consulta1->bindParam(2, $new);
+			$consulta1->execute();
+		}
+		
+
+		if($consulta1->rowCount()){
+			
+			$sql = "DELETE FROM news_categorias WHERE new = ?";
 			$consulta = $bd->prepare($sql);
-			$consulta->bindValue(1, $client);
-			$consulta->bindValue(2, $categorie);
-			$consulta->bindValue(3, $client);
-			$consulta->bindValue(4, $cancelado);
+			$consulta->bindValue(1, $new);
 			$consulta->execute();
-		}		
-		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+			
+			foreach ($data->categories as $categorie) {
+				$sql = "INSERT INTO news_categorias (new, categoria, cancelado) VALUES (?, (select id from categorias where nome = ? and cliente = ?), ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+				$consulta2 = $bd->prepare($sql);
+				$consulta2->bindValue(1, $new);
+				$consulta2->bindValue(2, $categorie);
+				$consulta2->bindValue(3, $client);
+				$consulta2->bindValue(4, $cancelado);
+				$consulta2->execute();
+			}		
+			return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+		}else{
+			return "failed";
+		}
+
 	}else{
-		return "failed";
+
+		echo "Inserindo new\n";
+		
+		$sql = "INSERT INTO news (data_postagem, img, avatar, conteudo, usuario, cliente, cancelado) VALUES (?, ?, ?, ?, ?, ?, ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+		$consulta = $bd->prepare($sql);
+		$consulta->bindValue(1, $date);
+		$consulta->bindValue(2, $imagem);
+		$consulta->bindValue(3, $avatar);
+		$consulta->bindValue(4, $conteudo);
+		$consulta->bindValue(5, $usuario);
+		$consulta->bindValue(6, $client);
+		$consulta->bindValue(7, $cancelado);
+		$consulta->execute();
+		
+		if($consulta->rowCount()){
+			foreach ($data->categories as $categorie) {
+				$sql = "INSERT INTO news_categorias (new, categoria, cancelado) VALUES ((select max(id) from news where cliente = ?), (select id from categorias where nome = ? and cliente = ?), ?)"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+				$consulta = $bd->prepare($sql);
+				$consulta->bindValue(1, $client);
+				$consulta->bindValue(2, $categorie);
+				$consulta->bindValue(3, $client);
+				$consulta->bindValue(4, $cancelado);
+				$consulta->execute();
+			}		
+			return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+		}else{
+			return "failed";
+		}
 	}
 }
 
@@ -122,7 +170,8 @@ function carregarNew($client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM 
 		}
 		$news[] = $dados;
 	} else {
-		$news[] = array("id"=>null, "date"=>null, "imgAvatar"=>null, "content"=>null, "userName"=>null, "categories"=>null);
+		//$news[] = array("id"=>null, "date"=>null, "imgAvatar"=>null, "content"=>null, "userName"=>null, "categories"=>null);
+		$news[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	return $news;	
@@ -167,7 +216,8 @@ function carregarCategoriasNew($client){
 			$categorias[] = array("id" => $row->id, "name" => $row->nome);
 		}
 	} else {
-		$categorias[] = array("id"=>null, "name"=>null);
+		//$categorias[] = array("id"=>null, "name"=>null);
+		$categorias[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	return $categorias;
@@ -191,7 +241,8 @@ function carregarCategoriasNewUser($usuario, $client){
 			$categorias[] = array("id" => $row->id, "categoria" => $row->categoria, "usuario" => $row->usuario);
 		}
 	} else {
-		$categorias[] = array("id"=>null, "name"=>null);
+		//$categorias[] = array("id"=>null, "name"=>null);
+		$categorias[] = array();
 		echo "Nenhum registro encontrado\n";
 	}
 	return $categorias;
