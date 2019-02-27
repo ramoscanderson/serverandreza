@@ -27,7 +27,7 @@ require ("control/log_exe.php");
 date_default_timezone_set('America/Sao_Paulo');
 
 class Connection implements MessageComponentInterface {
-	protected $clients;
+	public $clients;
 	public $conexoes = array();
 	
 	public function __construct() {
@@ -40,7 +40,7 @@ class Connection implements MessageComponentInterface {
 
 	public function onOpen(ConnectionInterface $conn) {
 		//caminho a partir da raiz pois está classe está sendo requerida no connection_srv
-		require ("control/onOpen_connection_exe.php");
+		require ("control/onOpen_connection_exe.php");		
 	}
 
 	public function onMessage(ConnectionInterface $from, $msg) {

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
 	require ("lib/bd.php");
@@ -60,16 +60,16 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		plano_alimentar.cancelado = ? AND
 		refeicao.cancelado = ? ) ON 
 		 ciclo.id = plano_alimentar.ciclo AND
-				plano_alimentar.cancelado = ?
+		 plano_alimentar.cancelado = ?
 
 	WHERE 	
 		ciclo.cancelado = ? and 
 		ciclo.cliente = ?  and 
 		ciclo.usuario = ?
 	GROUP BY 
-		alimento.id, refeicao.id, plano_alimentar.id
+		alimento.id, refeicao.id, plano_alimentar.id, ciclo.id
 	ORDER BY 
-		plano_alimentar.id, refeicao.hora, refeicao.id, quant";
+        ciclo.id, plano_alimentar.id, refeicao.hora, refeicao.id, quant";
 
 	/*
 	$sql = "SELECT 
@@ -336,16 +336,16 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		plano_alimentar.cancelado = ? AND
 		refeicao.cancelado = ? ) ON 
 		 ciclo.id = plano_alimentar.ciclo AND
-				plano_alimentar.cancelado = ?
+		 plano_alimentar.cancelado = ?
 
 	WHERE 	
 		ciclo.cancelado = ? and 
 		ciclo.cliente = ?  and 
 		ciclo.usuario = ?
 	GROUP BY 
-		alimento.id, refeicao.id, plano_alimentar.id
+		alimento.id, refeicao.id, plano_alimentar.id, ciclo.id
 	ORDER BY 
-		plano_alimentar.id, refeicao.hora, refeicao.id, quant"; //FAZER CORREÇÃO PARA MAIS CLIENTES  , alimento.consumo
+        ciclo.id, plano_alimentar.id, refeicao.hora, refeicao.id, quant"; //FAZER CORREÇÃO PARA MAIS CLIENTES  , alimento.consumo
 	
 	$consulta = $bd->prepare($sql);
 	$consulta->bindParam(1, $ativo);
@@ -374,7 +374,7 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 			if(is_null($row->plano_alimentar_id)){
 				//echo "PLANO ALIMENTAR isnull\n";
 				$refeicao_cont = -1;
-				$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" => array());
+				$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => ($row->ciclo_ativo ? true : false), "plans" => array());
 				$ciclo_cont++;
 				$ciclo_id = $row->ciclo_id;
 				//echo "ADICIONA INTEIRO - CICLO - " . $ciclo_cont . " - " . $plano_alimentar_id . " - " . $refeicao_id . " - " . $plano_alimentar_cont . " - " . $refeicao_cont . "\n";
@@ -385,7 +385,7 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 					$ciclo_id = $row->ciclo_id;
 					if(is_null($row->refeicao_id)){
 						//echo "REFEICAO isnull\n";
-						$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" =>
+						$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => ($row->ciclo_ativo ? true : false), "plans" =>
 								array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => array(array()))));
 						$plano_alimentar_id = $row->plano_alimentar_id;
 						$refeicao_cont = -1;
@@ -398,7 +398,7 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 						$hora = $partes[0];
 						$minuto = $partes[1];
    
-   						$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" =>
+   						$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => ($row->ciclo_ativo ? true : false), "plans" =>
 								array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => 
 								array(array("mealId" => $row->refeicao_id, "hour" => $hora . "h" . $minuto, "description" => $row->refeicao_descricao, "content" => 
 								array(array("idRecipe" => $row->receita_id, "foodId" => $row->alimento_id, "foodName" => $row->alimento_nome, "imgFood" => $row->alimento_imagem, "ingredients" => explode("<br>", $row->alimento_ingrediente), "modePrepare" => $row->alimento_modo_preparo, "consumption" => (date('Y-m-d') == explode(" ", $row->ultimo_consumo)[0] ? true : false), "obs" => $row->alimento_obs)))))));
@@ -475,7 +475,7 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 						if(is_null($row->refeicao_id)){
 							//echo "REFEICAO isnull\n";
 							$refeicao_cont = -1;
-							$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => $row->ciclo_ativo, "plans" =>
+							$plano_alimentar[] = array("cycleId" => $row->ciclo_id, "description" => $row->ciclo_descricao, "dateCreate" => $row->ciclo_data_criacao, "dateEnd" => $row->ciclo_data_fechamento, "feedback" => $row->ciclo_feedback, "activate" => ($row->ciclo_ativo ? true : false), "plans" =>
 									array(array("planId" => $row->plano_alimentar_id, "title" => $row->plano_alimentar_titulo, "foodPlan" => array())));
 							$plano_alimentar_id = $row->plano_alimentar_id;
 							$refeicao_id = "";
@@ -552,6 +552,56 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 	
 	return $plano_alimentar;
 	
+}
+
+
+function ativarCiclo($data){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIERAM CORRETOS
+	require ("lib/bd.php");
+
+	$cicloId = $data->cycleId;
+	$usuario = $data->userId;
+	$desativo = 0;
+	$ativo = 1;
+
+	$sql = "UPDATE ciclo SET ativo = ? where usuario = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$consulta = $bd->prepare($sql);
+	$consulta->bindValue(1, $desativo);
+	$consulta->bindValue(2, $usuario);
+	$consulta->execute();
+
+	$sql1 = "UPDATE ciclo SET ativo = ? where id = ?"; //FAZER CORREÇÃO PARA MAIS CLIENTES
+	$consulta1 = $bd->prepare($sql1);
+	$consulta1->bindValue(1, $ativo);
+	$consulta1->bindValue(2, $cicloId);
+	$consulta1->execute();
+
+	if($consulta->rowCount() && $consulta1->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
+}
+
+
+function deleteCicloAlimentar($data){
+	require ("lib/bd.php");
+
+	$ciclo = $data->cycleId;
+	$cancelado = 1;
+
+	echo "Deletando ciclo alimentar\n";
+
+	$sql = "UPDATE ciclo SET cancelado = ? WHERE id = ?"; 
+	$consulta = $bd->prepare($sql);
+	$consulta->bindParam(1, $cancelado);
+	$consulta->bindParam(2, $ciclo);
+	$consulta->execute();
+
+	if($consulta->rowCount()){
+		return "success"; //NA VERIFICAÇÃO SE OS DADOS VIERAM CORRETOS, CASO NÃO TENHAM VINDO DEVE-SE RETORNAR ERROR, POR ISSO NÃO É TRUE E FALSE
+	}else{
+		return "failed";
+	}
 }
 
 
@@ -1167,13 +1217,18 @@ function addCiclo($data, $client){ //FAZER CÓDIGO QUE VERIFIQUE SE OS DADOS VIE
 		$ciclo_inserido = $bd->lastInsertId();
 	
 		if($impotado){
-			$sql = "SELECT id, usuario FROM plano_alimentar WHERE ciclo = ?"; 
+            echo "importando ciclo\n";
+            $sql = "SELECT id, usuario FROM plano_alimentar WHERE ciclo = ? AND cancelado = ?"; 
 			$consulta = $bd->prepare($sql);
-			$consulta->bindParam(1, $ciclo);
+			// $consulta->bindParam(1, $ciclo);
+			$consulta->bindParam(1, $impotado);
+			$consulta->bindParam(2, $cancelado);
 			$consulta->execute();
 	
 			while($row = $consulta->fetch(PDO::FETCH_OBJ)){
-				$dados = (object)array("idPlanImport"=>$row->id, "userId"=>$row->usuario, "cycleId"=>$ciclo_inserido);
+				//$dados = (object)array("idPlanImport"=>$row->id, "userId"=>$row->usuario, "cycleId"=>$ciclo_inserido);
+                echo "importando planos\n";
+                $dados = (object)array("idPlanImport"=>$row->id, "userId"=>$usuario, "cycleId"=>$ciclo_inserido);
 				duplicarPlano($dados, $client);
 			}		
 		}

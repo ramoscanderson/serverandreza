@@ -1020,6 +1020,40 @@ if( /*false*/ !validaToken($messageObj->token)){
 			break;
 
 
+		case "toActiveCycle":
+			if(isVisitante($messageObj->token)){
+				echo "Token de visitante nao autorizado\n";
+				$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","toActiveCycle",array("isToActiveCycle" => false)));
+				echo "Resposta enviada\n";
+			}else{
+				echo "Ativando ciclo alimentar \n";
+
+				$plano = ativarCiclo($messageObj->request->data);
+				if($plano == "success"){
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","toActiveCycle",array("isToActiveCycle" => true)));
+					echo "Resposta enviada\n";
+					echo "Atualizando dispositivo do usuario\n";
+					global $conexoes;
+					
+					// foreach ($this->clients as $client) {
+					// 	if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
+					// 		$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+					// 		echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+					// 		$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					// 	}
+					// }
+					
+					// echo "Dispositivo atualizado\n";
+				}else{
+					echo "erro ao ativar ciclo alimentar \n";
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","toActiveCycle",array("isToActiveCycle" => false)));
+					echo "Resposta enviada\n";
+				}
+				
+			}
+			break;
+
+
 		case "setFoodPlan":
 			if(isVisitante($messageObj->token)){
 				echo "Token de visitante nao autorizado\n";
@@ -1079,6 +1113,39 @@ if( /*false*/ !validaToken($messageObj->token)){
 				}else{
 					echo "erro ao deletar refeicao \n";
 					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelFoodPlan",array("isCancelFoodPlan" => false)));
+					echo "Resposta enviada\n";
+				}
+			}
+			break;
+
+
+		case "cancelCyclePlan":
+			if(isVisitante($messageObj->token)){
+				echo "Token de visitante nao autorizado\n";
+				$from->send(message_setProtocol($messageObj->request->id,"605","Error - Requisition requires login","1.0.5","cancelCyclePlan",array("isCancelCyclePlan" => false)));
+				echo "Resposta enviada\n";
+			}else{
+				echo "deletando ciclo alimentar \n";
+
+				//print_r($messageObj->request->data);
+
+				$refeicao = deleteCicloAlimentar($messageObj->request->data);
+				if($refeicao == "success"){
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelCyclePlan",array("isCancelCyclePlan" => true)));
+					echo "Resposta enviada\n";
+					// echo "Atualizando dispositivo do usuario\n";
+					// global $conexoes;
+					// foreach ($this->clients as $client) {
+					// 	if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
+					// 		$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+					// 		echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+					// 		$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+					// 	}
+					// }
+					// echo "Dispositivo atualizado\n";
+				}else{
+					echo "erro ao deletar ciclo alimentar \n";
+					$from->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","cancelCyclePlan",array("isCancelCyclePlan" => false)));
 					echo "Resposta enviada\n";
 				}
 			}
