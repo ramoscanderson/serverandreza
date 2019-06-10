@@ -1069,10 +1069,15 @@ if( /*false*/ !validaToken($messageObj->token)){
 					echo "Atualizando dispositivo do usuario\n";
 					global $conexoes;
 					foreach ($this->clients as $client) {
-						if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) || ($conexoes["{$client->resourceId}"]["admin"] == "1")){
+						if(($messageObj->request->data->idUser == $conexoes["{$client->resourceId}"]["userId"]) && ($conexoes["{$client->resourceId}"]["admin"] != "1")){
 							$plano_alimentar = carregarPlanoAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
 							echo "Enviando plano alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
 							$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateFoodPlan",$plano_alimentar));
+						}
+						if($conexoes["{$client->resourceId}"]["admin"] == "1"){
+							$plano_alimentar = carregarCicloAlimentar($messageObj->request->data, $messageObj->request->client, getJWT($messageObj->token)->id);
+							echo "Enviando ciclo alimentar para conexao [{$client->resourceId}] - usuario " . $conexoes["{$client->resourceId}"]["userId"] . "\n";
+							$client->send(message_setProtocol($messageObj->request->id,"200","Success","1.0.5","updateCiclePlan",$plano_alimentar));
 						}
 					}
 					echo "Dispositivo atualizado\n";

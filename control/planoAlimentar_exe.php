@@ -138,12 +138,22 @@ function carregarPlanoAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 	$consulta->bindParam(4, $ativo);
 	$consulta->bindParam(5, $ativo);
 	$consulta->bindParam(6, $ativo);
-	$consulta->bindParam(7, $client);
-	$consulta->bindParam(8, $usuario);
-	$consulta->bindParam(9, $ativo);
-	$consulta->bindParam(10, $client);
-	$consulta->bindParam(11, $usuario);
-	$consulta->bindParam(12, $ativado);
+	$consulta->bindParam(7, $ativo);
+	$consulta->bindParam(8, $client);
+	$consulta->bindParam(9, $usuario);
+	// $consulta = $bd->prepare($sql);
+	// $consulta->bindParam(1, $ativo);
+	// $consulta->bindParam(2, $ativo);
+	// $consulta->bindParam(3, $ativo);
+	// $consulta->bindParam(4, $ativo);
+	// $consulta->bindParam(5, $ativo);
+	// $consulta->bindParam(6, $ativo);
+	// $consulta->bindParam(7, $client);
+	// $consulta->bindParam(8, $usuario);
+	// $consulta->bindParam(9, $ativo);
+	// $consulta->bindParam(10, $client);
+	// $consulta->bindParam(11, $usuario);
+	// $consulta->bindParam(12, $ativado);
 	$consulta->execute();
 	
 	$plano_alimentar = array();
@@ -309,12 +319,15 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		alimento.ingrediente as alimento_ingrediente, 
 		alimento.modo_preparo as alimento_modo_preparo, 
 		alimento.id as alimento_id, 
+		alimento.refeicao as alimento_refeicao,
 		alimento.consumo as alimento_consumo, 
 		alimento.obs as alimento_obs,
 		refeicao.id as refeicao_id, 
+		refeicao.plano_alimentar as refeicao_plano_alimentar,
 		refeicao.hora as refeicao_hora, 
 		refeicao.descricao as refeicao_descricao,
 		plano_alimentar.id as plano_alimentar_id, 
+		plano_alimentar.ciclo as plano_alimentar_ciclo,
 		plano_alimentar.titulo as plano_alimentar_titulo, 
 		plano_alimentar.usuario as plano_alimentar_usuario,
 		MAX(consumo_alimento.data) as ultimo_consumo,
@@ -368,9 +381,85 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 		$plano_alimentar_id;
 		$ciclo_id = "";
 		//echo "\n\n\n";
+		$dados = array();
 		while($row = $consulta->fetch(PDO::FETCH_OBJ)){
+			$dados[] = $row;
+		}	
+								
+		$plano_alimentar = array();
+		$ultimo_ciclo = "";
+		$cont = 0;
+		foreach ($dados as $value) {
+			$ciclo;
+			if($ultimo_ciclo != $value->ciclo_id){
+				$ciclo = array("cycleId" => $value->ciclo_id, 
+							"description" => $value->ciclo_descricao, 
+							"dateCreate" => $value->ciclo_data_criacao, 
+							"dateEnd" => $value->ciclo_data_fechamento, 
+							"feedback" => $value->ciclo_feedback, 
+							"activate" => ($value->ciclo_ativo ? true : false), 
+							"plans" => array());
+
+				$plans_array = array_filter($dados, function($value2) use ($value){
+					return ($value2->plano_alimentar_ciclo == $value->ciclo_id);
+				});
+
+				$ultimo_plan = "";
+				foreach ($plans_array as $value3) {
+					$plan;
+					if($ultimo_plan != $value3->plano_alimentar_id){
+						$plan = array("planId" => $value3->plano_alimentar_id, 
+									"title" => $value3->plano_alimentar_titulo, 
+									"foodPlan" => array());
+
+						$foods_array = array_filter($plans_array, function($value4) use ($value3){
+							return ($value4->refeicao_plano_alimentar == $value3->plano_alimentar_id);
+						});
+
+						$ultimo_food = "";
+						foreach ($foods_array as $value5) {
+							$food;
+							if($ultimo_food != $value5->refeicao_id){
+								$partes = explode(":", $value5->refeicao_hora);
+								$hora = $partes[0];
+								$minuto = $partes[1];
+								$food = array("mealId" => $value5->refeicao_id, 
+											"hour" => $hora . "h" . $minuto, 
+											"description" => $value5->refeicao_descricao, 
+											"content" => array());
+   
+								$contents_array = array_filter($foods_array, function($value6) use ($value5){
+									return ($value6->alimento_refeicao == $value5->refeicao_id);
+								});
+   
+								foreach ($contents_array as $value7) {
+									$content = array("idRecipe" => $value7->receita_id, 
+											"foodId" => $value7->alimento_id, 
+											"foodName" => $value7->alimento_nome, 
+											"imgFood" => $value7->alimento_imagem, 
+											"ingredients" => explode("<br>", $value7->alimento_ingrediente), 
+											"modePrepare" => $value7->alimento_modo_preparo, 
+											"consumption" => (date('Y-m-d') == explode(" ", $value7->ultimo_consumo)[0] ? true : false), 
+											"obs" => $value7->alimento_obs);
+   									
+									$food["content"][] = $content;
+								}
+								$plan["foodPlan"][] = $food;
+								$ultimo_food = $value5->refeicao_id;
+							}
+						}
+						$ciclo["plans"][] = $plan;
+						$ultimo_plan = $value3->plano_alimentar_id;
+					}
+				}
+				$plano_alimentar[] = $ciclo;
+				$ultimo_ciclo = $value->ciclo_id;
+				$cont++;
+			}
+		}
 			
 			
+			/*
 			if(is_null($row->plano_alimentar_id)){
 				// echo "PLANO ALIMENTAR isnull\n";
 				$refeicao_cont = -1;
@@ -502,10 +591,13 @@ function carregarCicloAlimentar($data, $client, $usuario){ //FAZER CÓDIGO QUE V
 					}
 				}				
 			}
+			*/
+			
+			
 			
 			//print_r($plano_alimentar);
 			//echo "---------------------------------------------------------------------------------------\n";
-		}
+		
 				
 	} else {
 		/*
